@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/camera_service.dart';
 
 // ═══════════════════════════════════════
 // GREYSCALE MATRIX
@@ -27,8 +29,13 @@ const _kFlowerHotpinkRight = 'assets/images/flower_hotpink_right.png';
 
 class ARVisualizationScreen extends StatefulWidget {
   final bool showBottomNav;
+  final VoidCallback? onBackPressed;
 
-  const ARVisualizationScreen({super.key, this.showBottomNav = true});
+  const ARVisualizationScreen({
+    super.key,
+    this.showBottomNav = true,
+    this.onBackPressed,
+  });
 
   @override
   State<ARVisualizationScreen> createState() => _ARVisualizationScreenState();
@@ -40,6 +47,10 @@ class _ARVisualizationScreenState extends State<ARVisualizationScreen>
   late AnimationController _entranceController;
   late AnimationController _boosterPulseController;
   late AnimationController _capturePressController;
+  
+  final CameraService _cameraService = CameraService();
+  bool _isCameraInitialized = false;
+  String? _captureMessage;
 
   @override
   void initState() {
@@ -65,6 +76,34 @@ class _ARVisualizationScreenState extends State<ARVisualizationScreen>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    
+    // Initialize camera
+    _initializeCamera();
+  }
+  
+  Future<void> _initializeCamera() async {
+    try {
+      await _cameraService.initializeCamera();
+      setState(() {
+        _isCameraInitialized = true;
+      });
+    } catch (e) {
+      debugPrint('Failed to initialize camera: $e');
+      _showMessage('Camera failed to initialize');
+    }
+  }
+  
+  void _showMessage(String message) {
+    setState(() {
+      _captureMessage = message;
+    });
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _captureMessage = null;
+        });
+      }
+    });
   }
 
   @override
@@ -73,6 +112,7 @@ class _ARVisualizationScreenState extends State<ARVisualizationScreen>
     _entranceController.dispose();
     _boosterPulseController.dispose();
     _capturePressController.dispose();
+    _cameraService.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
@@ -84,17 +124,57 @@ class _ARVisualizationScreenState extends State<ARVisualizationScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const _GreyscaleBackground(),
+          // Camera live feed background
+          _isCameraInitialized
+              ? _CameraBackground(cameraService: _cameraService)
+              : const _GreyscaleBackground(),
+          
+          // AR flower overlays
           _ARFlowerOverlays(
             floatController: _floatController,
             entranceController: _entranceController,
           ),
-          const _TopContent(),
+          
+          // Top content
+          _TopContent(onBackPressed: widget.onBackPressed),
+          
+          // Bottom controls
           _BottomControls(
             boosterPulseController: _boosterPulseController,
             capturePressController: _capturePressController,
             onCapturePress: _onCapturePress,
+            cameraService: _cameraService,
+            onCaptureMessage: _showMessage,
           ),
+          
+          // Capture message overlay
+          if (_captureMessage != null)
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.3,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    _captureMessage!,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -137,6 +217,108 @@ class _GreyscaleBackground extends StatelessWidget {
       ),
     );
   }
+}
+
+// ═══════════════════════════════════════
+// LAYER 1B — CAMERA BACKGROUND
+// ═══════════════════════════════════════
+
+class _CameraBackground extends StatelessWidget {
+  final CameraService cameraService;
+
+  const _CameraBackground({required this.cameraService});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = cameraService.controller;
+    
+    if (controller == null || !controller.value.isInitialized) {
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Camera preview
+        CameraPreview(controller),
+        
+        // Dark overlay for AR effect
+        Container(
+          color: Colors.black.withValues(alpha: 0.15),
+        ),
+        
+        // Grid overlay (optional AR grid)
+        CustomPaint(
+          painter: _ARGridPainter(),
+          size: Size.infinite,
+        ),
+      ],
+    );
+  }
+}
+
+class _ARGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.08)
+      ..strokeWidth = 0.5;
+
+    const gridSize = 60.0;
+    
+    // Vertical lines
+    for (int i = 0; i <= (size.width / gridSize).ceil(); i++) {
+      canvas.drawLine(
+        Offset(i * gridSize, 0),
+        Offset(i * gridSize, size.height),
+        paint,
+      );
+    }
+
+    // Horizontal lines
+    for (int i = 0; i <= (size.height / gridSize).ceil(); i++) {
+      canvas.drawLine(
+        Offset(0, i * gridSize),
+        Offset(size.width, i * gridSize),
+        paint,
+      );
+    }
+    
+    // Center focus circle
+    final centerPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height / 2),
+      80,
+      centerPaint,
+    );
+    
+    // Center crosshair
+    const crossSize = 20.0;
+    canvas.drawLine(
+      Offset(size.width / 2 - crossSize, size.height / 2),
+      Offset(size.width / 2 + crossSize, size.height / 2),
+      centerPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width / 2, size.height / 2 - crossSize),
+      Offset(size.width / 2, size.height / 2 + crossSize),
+      centerPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _GalleryFallback extends StatelessWidget {
@@ -329,7 +511,9 @@ class _FlowerPlaceholder extends StatelessWidget {
 // ═══════════════════════════════════════
 
 class _TopContent extends StatelessWidget {
-  const _TopContent();
+  final VoidCallback? onBackPressed;
+  
+  const _TopContent({this.onBackPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -337,6 +521,36 @@ class _TopContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Back button
+          Padding(
+            padding: const EdgeInsets.only(top: 20, left: 24, right: 24),
+            child: GestureDetector(
+              onTap: () {
+                // Navigate back to home screen via callback
+                if (onBackPressed != null) {
+                  onBackPressed!();
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
           // Title block
           Padding(
             padding: const EdgeInsets.only(top: 40, left: 24, right: 24),
@@ -386,16 +600,56 @@ class _TopContent extends StatelessWidget {
 // LAYER 4 — BOTTOM CONTROLS
 // ═══════════════════════════════════════
 
-class _BottomControls extends StatelessWidget {
+class _BottomControls extends StatefulWidget {
   final AnimationController boosterPulseController;
   final AnimationController capturePressController;
   final VoidCallback onCapturePress;
+  final CameraService cameraService;
+  final Function(String) onCaptureMessage;
 
   const _BottomControls({
     required this.boosterPulseController,
     required this.capturePressController,
     required this.onCapturePress,
+    required this.cameraService,
+    required this.onCaptureMessage,
   });
+
+  @override
+  State<_BottomControls> createState() => _BottomControlsState();
+}
+
+class _BottomControlsState extends State<_BottomControls> {
+  bool _isCapturing = false;
+
+  Future<void> _handleCapture() async {
+    if (_isCapturing || !widget.cameraService.isInitialized) return;
+
+    try {
+      setState(() => _isCapturing = true);
+      widget.onCapturePress();
+
+      final filePath = await widget.cameraService.capturePhoto();
+      widget.onCaptureMessage('Photo captured: ${filePath?.split('/').last}');
+    } catch (e) {
+      widget.onCaptureMessage('Failed to capture photo');
+      debugPrint('Capture error: $e');
+    } finally {
+      setState(() => _isCapturing = false);
+    }
+  }
+
+  Future<void> _handleSwitchCamera() async {
+    if (!widget.cameraService.isInitialized) return;
+
+    try {
+      await widget.cameraService.switchCamera();
+      widget.onCaptureMessage('Camera switched');
+    } catch (e) {
+      widget.onCaptureMessage('Failed to switch camera');
+      debugPrint('Switch camera error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -410,9 +664,9 @@ class _BottomControls extends StatelessWidget {
           children: [
             // Activate Booster button
             AnimatedBuilder(
-              animation: boosterPulseController,
+              animation: widget.boosterPulseController,
               builder: (context, child) {
-                final scale = 1.0 + math.sin(boosterPulseController.value * math.pi) * 0.03;
+                final scale = 1.0 + math.sin(widget.boosterPulseController.value * math.pi) * 0.03;
                 return Transform.scale(
                   scale: scale,
                   child: child,
@@ -460,13 +714,35 @@ class _BottomControls extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(width: 60),
+                // Switch camera button
                 GestureDetector(
-                  onTap: onCapturePress,
+                  onTap: _isCapturing ? null : _handleSwitchCamera,
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.transparent,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        width: 2,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.flip_camera_ios_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                // Capture button
+                GestureDetector(
+                  onTap: _isCapturing ? null : _handleCapture,
                   child: AnimatedBuilder(
-                    animation: capturePressController,
+                    animation: widget.capturePressController,
                     builder: (context, child) {
-                      final t = capturePressController.value;
+                      final t = widget.capturePressController.value;
                       final scale = t < 0.5
                           ? 1.0 - (t * 2) * 0.08
                           : 0.92 + ((t - 0.5) * 2) * 0.08;
@@ -489,10 +765,25 @@ class _BottomControls extends StatelessWidget {
                           ),
                         ],
                       ),
+                      child: _isCapturing
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.camera_alt_rounded,
+                              color: Colors.black,
+                              size: 28,
+                            ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 24),
+                // Flash button (placeholder)
                 GestureDetector(
                   onTap: () {},
                   child: Container(
@@ -507,9 +798,9 @@ class _BottomControls extends StatelessWidget {
                       ),
                     ),
                     child: Icon(
-                      Icons.chevron_right_rounded,
+                      Icons.flash_on_rounded,
                       color: Colors.white,
-                      size: 28,
+                      size: 24,
                     ),
                   ),
                 ),

@@ -87,29 +87,37 @@ class EssenceAnalysisBanner extends StatelessWidget {
             ),
           ),
         ),
-        // Left perfume bottle — overflows card top edge
+        // Left perfume bottle — overflows card bottom-left
         Positioned(
-          left: -24,
+          left: -60,
           bottom: -20,
+          width: 120,
+          height: 140,
           child: Opacity(
             opacity: 0.9,
-            child: Icon(
-              Icons.liquor_rounded,
-              color: AppColors.accentBlue.withValues(alpha: 0.4),
-              size: 160,
+            child: Transform.rotate(
+              angle: 0.15,
+              child: Image.asset(
+                'assets/images/ysl_perfume.png',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ),
-        // Right perfume bottle — overflows card top edge
+        // Right perfume bottle — overflows card top-right
         Positioned(
-          right: -20,
+          right: -60,
           top: -24,
+          width: 130,
+          height: 160,
           child: Opacity(
             opacity: 0.85,
-            child: Icon(
-              Icons.liquor_rounded,
-              color: AppColors.accentPurple.withValues(alpha: 0.45),
-              size: 170,
+            child: Transform.rotate(
+              angle: -0.15,
+              child: Image.asset(
+                'assets/images/givenchy_perfume.png',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ),

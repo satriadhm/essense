@@ -75,7 +75,7 @@ class _PerfumeDetailScreenState extends State<PerfumeDetailScreen> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenHorizontal),
         itemCount: days.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) => WeekDayTile(
           letter: days[i].$1,
           day: days[i].$2,

@@ -3,40 +3,57 @@ import '../../theme/app_theme.dart';
 
 class QuickActionItem {
   final String label;
-  final IconData icon;
+  final IconData? icon;
+  final String? imagePath;
   final Color? iconColor;
   final VoidCallback? onTap;
   const QuickActionItem({
     required this.label,
-    required this.icon,
+    this.icon,
+    this.imagePath,
     this.iconColor,
     this.onTap,
   });
 }
 
 class QuickActionGrid extends StatelessWidget {
-  const QuickActionGrid({super.key});
+  final VoidCallback? onAnalyzerTap;
+  final VoidCallback? onChatMiaTap;
+  final VoidCallback? onARTap;
+  final VoidCallback? onClosetTap;
 
-  static final List<QuickActionItem> _items = [
+  const QuickActionGrid({
+    super.key,
+    this.onAnalyzerTap,
+    this.onChatMiaTap,
+    this.onARTap,
+    this.onClosetTap,
+  });
+
+  List<QuickActionItem> get _items => [
     QuickActionItem(
       label: 'Analyzer',
-      icon: Icons.insights_rounded,
+      imagePath: 'assets/images/analysis.png',
       iconColor: AppColors.accentBlue,
+      onTap: onAnalyzerTap,
     ),
     QuickActionItem(
       label: 'Chat Mia!',
-      icon: Icons.chat_bubble_rounded,
+      imagePath: 'assets/images/chat_mia.png',
       iconColor: const Color(0xFF60A5FA),
+      onTap: onChatMiaTap,
     ),
     QuickActionItem(
       label: 'Augmented\nReality',
-      icon: Icons.view_in_ar_rounded,
+      imagePath: 'assets/images/check_cartridge.png',
       iconColor: AppColors.accentPurple,
+      onTap: onARTap,
     ),
     QuickActionItem(
       label: 'Your Closet',
-      icon: Icons.layers_rounded,
+      imagePath: 'assets/images/closet.png',
       iconColor: const Color(0xFF7DD3FC),
+      onTap: onClosetTap,
     ),
   ];
 
@@ -69,33 +86,27 @@ class _QuickActionButton extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
+              SizedBox(
                 width: size,
                 height: size,
-            decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(AppRadius.icon),
-              border: Border.all(color: AppColors.cardBorder),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-                BoxShadow(
-                  color: (item.iconColor ?? AppColors.accentPurple)
-                      .withValues(alpha: 0.15),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-                padding: EdgeInsets.all((size * 0.17).clamp(8.0, 12.0)),
-                child: Icon(
-                  item.icon,
-                  color: item.iconColor ?? AppColors.accentPurple,
-                  size: (size * 0.44).clamp(24.0, 32.0),
-                ),
+                child: item.imagePath != null
+                    ? Image.asset(
+                        item.imagePath!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback to icon if image fails to load
+                          return Icon(
+                            Icons.image_not_supported_rounded,
+                            color: item.iconColor ?? AppColors.accentPurple,
+                            size: size,
+                          );
+                        },
+                      )
+                    : Icon(
+                        item.icon ?? Icons.circle_rounded,
+                        color: item.iconColor ?? AppColors.accentPurple,
+                        size: size,
+                      ),
               ),
               const SizedBox(height: 6),
               Text(

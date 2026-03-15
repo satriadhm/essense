@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/header/user_greeting_widget.dart';
 import '../widgets/header/location_pill_widget.dart';
@@ -7,17 +8,39 @@ import '../widgets/cards/essence_analysis_banner.dart';
 import '../widgets/quick_actions/quick_action_grid.dart';
 import '../widgets/activities/activity_card.dart';
 import '../widgets/bottom_nav/custom_bottom_nav.dart';
+import '../services/weather_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showBottomNav;
+  final VoidCallback? onAnalyzerTap;
+  final VoidCallback? onChatMiaTap;
+  final VoidCallback? onARTap;
+  final VoidCallback? onClosetTap;
 
-  const HomeScreen({super.key, this.showBottomNav = true});
+  const HomeScreen({
+    super.key,
+    this.showBottomNav = true,
+    this.onAnalyzerTap,
+    this.onChatMiaTap,
+    this.onARTap,
+    this.onClosetTap,
+  });
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentNavIndex = 0; // Home tab when standalone
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch weather data when the screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<WeatherProvider>(context, listen: false)
+          .fetchWeatherByLocation();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,9 +98,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(width: 8),
                             Flexible(
-                              child: const LocationPillWidget(
-                                city: 'Paris',
-                                flagEmoji: '🇫🇷',
+                              child: Consumer<WeatherProvider>(
+                                builder: (context, weatherProvider, child) {
+                                  final city = weatherProvider.city ?? 'Location';
+                                  
+                                  // Get flag emoji based on country code
+                                  String getFlagEmoji(String countryCode) {
+                                    if (countryCode.isEmpty) return '📍';
+                                    final codePoints = countryCode
+                                        .toUpperCase()
+                                        .codeUnits
+                                        .map((code) => code + 127397);
+                                    return String.fromCharCodes(codePoints);
+                                  }
+                                  
+                                  return LocationPillWidget(
+                                    city: city,
+                                    flagEmoji: getFlagEmoji(weatherProvider.country ?? ''),
+                                  );
+                                },
                               ),
                             ),
                           ],
@@ -111,10 +150,15 @@ class _HomeScreenState extends State<HomeScreen> {
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
               // ─── QUICK ACTIONS ────────────────────────────────────────
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenHorizontal),
-                  child: QuickActionGrid(),
+                  child: QuickActionGrid(
+                    onAnalyzerTap: widget.onAnalyzerTap,
+                    onChatMiaTap: widget.onChatMiaTap,
+                    onARTap: widget.onARTap,
+                    onClosetTap: widget.onClosetTap,
+                  ),
                 ),
               ),
 
@@ -147,13 +191,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         physics: const BouncingScrollPhysics(),
                         clipBehavior: Clip.none,
                         itemCount: 5,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             const SizedBox(width: AppSpacing.cardGap),
                         itemBuilder: (context, index) => ActivityCard(
                           date: '28 Jan 2026',
                           title:
                               'The Urban Shield — Optimized for High Humidity',
-                          imageAsset: 'assets/images/ysl_libre.png',
+                          imageAsset: index % 2 == 0
+                              ? 'assets/images/activity_card_1.png'
+                              : 'assets/images/activity_card_2.png',
                           width: cardWidth,
                         ),
                       ),

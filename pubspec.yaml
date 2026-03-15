@@ -52,6 +52,11 @@ dependencies:
   geocoding: ^3.0.0
   http: ^1.2.0
 
+  # Camera & Media
+  camera: ^0.10.5
+  image_picker: ^1.0.1
+  image: ^4.0.0
+
   # Assets & Images
   cached_network_image: ^3.3.1
   flutter_svg: ^2.0.9

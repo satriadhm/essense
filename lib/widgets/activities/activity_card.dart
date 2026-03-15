@@ -34,8 +34,10 @@ class ActivityCard extends StatelessWidget {
             child: Container(
               width: 70, height: 100,
               color: AppColors.cardBg,
-              child: Icon(Icons.liquor_rounded,
-                  color: AppColors.accentBlue.withOpacity(0.5), size: 50),
+              child: Image.asset(
+                imageAsset,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
           const SizedBox(width: 12),

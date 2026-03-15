@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'screens/main_shell.dart';
+import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
+import 'services/weather_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,18 +20,26 @@ class EssenceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ESSENCE',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: AppColors.bgDeep,
-        fontFamily: 'SF Pro Display',
-        colorScheme: const ColorScheme.dark(
-          primary: AppColors.accentPurple,
-          surface: AppColors.bgDeep,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => WeatherProvider()),
+      ],
+      child: MaterialApp(
+        title: 'ESSENCE',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          scaffoldBackgroundColor: AppColors.bgDeep,
+          fontFamily: 'SF Pro Display',
+          colorScheme: const ColorScheme.dark(
+            primary: AppColors.accentPurple,
+            surface: AppColors.bgDeep,
+          ),
         ),
+        home: const SplashScreen(),
+        routes: {
+          '/home': (context) => const MainShell(),
+        },
       ),
-      home: const MainShell(),
     );
   }
 }

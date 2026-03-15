@@ -32,7 +32,7 @@ class UserGreetingWidget extends StatelessWidget {
               width: 52,
               height: 52,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => CircleAvatar(
+              errorBuilder: (_, _, _) => CircleAvatar(
                 radius: 26,
                 backgroundColor: AppColors.cardBg,
                 child: Text(

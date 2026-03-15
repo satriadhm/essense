@@ -8,7 +8,7 @@ class CartridgeVolumeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         gradient: AppGradients.cartridgeCard,
         borderRadius: BorderRadius.circular(AppRadius.card),
@@ -20,45 +20,13 @@ class CartridgeVolumeCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Tall perfume bottle icon — dark fill + lighter border, glass-like
+          // Cartridge bottle image asset
           SizedBox(
-            width: 40,
-            height: 56,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Cap — dark fill + brighter border
-                Container(
-                  width: 18,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
-                    color: AppColors.iconFillDark,
-                    border: Border.all(
-                      color: AppColors.accentCartridge.withValues(alpha: 0.6),
-                      width: 1,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                // Bottle body — glass-like translucent
-                Container(
-                  width: 24,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(4),
-                      bottom: Radius.circular(12),
-                    ),
-                    color: AppColors.iconFillDark.withValues(alpha: 0.6),
-                    border: Border.all(
-                      color: AppColors.accentCartridge.withValues(alpha: 0.5),
-                      width: 1,
-                    ),
-                  ),
-                ),
-              ],
+            width: 60,
+            height: 80,
+            child: Image.asset(
+              'assets/images/check_cartridge.png',
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 12),
@@ -68,6 +36,7 @@ class CartridgeVolumeCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Percentage row — % superscripted to top of number
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -75,25 +44,31 @@ class CartridgeVolumeCard extends StatelessWidget {
                     Text(
                       '$volumePercent',
                       style: AppTextStyles.percentLarge.copyWith(
-                        fontSize: 40,
+                        fontSize: 44,
                         fontWeight: FontWeight.w700,
+                        height: 1.0,
                         color: AppColors.statWhiteWarm,
                       ),
                     ),
-                    Text(
-                      '%',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: AppColors.statWhiteWarm,
-                        fontWeight: FontWeight.w700,
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '%',
+                        style: TextStyle(
+                          fontSize: 20,
+                          height: 1.0,
+                          color: AppColors.statWhiteWarm,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 2),
                 Text(
                   'Cartridge Volume',
                   style: AppTextStyles.cardSub.copyWith(
-                    fontSize: 10,
+                    fontSize: 13,
                     fontWeight: FontWeight.w400,
                     color: AppColors.accentCartridge.withValues(alpha: 0.65),
                   ),
