@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../screens/analysis/add_fragrance_screen.dart';
 
 class EssenceAnalysisBanner extends StatelessWidget {
   const EssenceAnalysisBanner({super.key});
@@ -11,72 +12,71 @@ class EssenceAnalysisBanner extends StatelessWidget {
       children: [
         // Card with gradient (clipped to rounded rect)
         ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadius.card),
+          borderRadius: BorderRadius.circular(20),
           child: Container(
-            height: 180,
+            height: 160,
             decoration: BoxDecoration(
               gradient: AppGradients.analysisBanner,
-              borderRadius: BorderRadius.circular(AppRadius.card),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.accentPurple.withValues(alpha: 0.3),
+                color: AppColors.borderCyan.withValues(alpha: 0.5),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.accentPurple.withValues(alpha: 0.15),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final horizontalPadding =
-                    (constraints.maxWidth * 0.15).clamp(16.0, 80.0);
                 return Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding, 20, horizontalPadding, 20,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Start Using ESSENCE. Analysis',
-                        style: AppTextStyles.bannerTitle,
-                        textAlign: TextAlign.center,
+                        'Start Using Essense Analysis',
+                        style: AppTextStyles.bannerTitle.copyWith(fontSize: 18),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
                       Text(
-                        "Get personalized olfactory diagnostics by syncing your skin's bio-rhythm with real-time environmental data.",
-                        style: AppTextStyles.bannerSub,
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
+                        'Tailored your personalized scent via skin bio-rhythms and real-time environment data.',
+                        style: AppTextStyles.bannerSub.copyWith(fontSize: 13),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 16),
-                      OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textPrimary,
-                          side: const BorderSide(
-                            color: AppColors.textPrimary,
-                            width: 1.5,
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const AddFragranceScreen(),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.accentCyan,
+                            side: const BorderSide(
+                              color: AppColors.accentCyan,
+                              width: 1.5,
+                            ),
+                            minimumSize: const Size.fromHeight(44),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 28,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                          ),
-                        ),
-                        child: const Text(
-                          'Generate the Result',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                          child: const Text(
+                            'Start It Now',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                       ),
@@ -89,10 +89,10 @@ class EssenceAnalysisBanner extends StatelessWidget {
         ),
         // Left perfume bottle — overflows card bottom-left
         Positioned(
-          left: -60,
-          bottom: -20,
-          width: 120,
-          height: 140,
+          left: -30,
+          bottom: -10,
+          width: 90,
+          height: 110,
           child: Opacity(
             opacity: 0.9,
             child: Transform.rotate(
@@ -106,10 +106,10 @@ class EssenceAnalysisBanner extends StatelessWidget {
         ),
         // Right perfume bottle — overflows card top-right
         Positioned(
-          right: -60,
-          top: -24,
-          width: 130,
-          height: 160,
+          right: -16,
+          top: -12,
+          width: 88,
+          height: 112,
           child: Opacity(
             opacity: 0.85,
             child: Transform.rotate(

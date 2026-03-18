@@ -51,7 +51,7 @@ class WeatherProvider extends ChangeNotifier {
       
       _weather = weather;
       _city = location['city'] as String;
-      _country = location['countryName'] as String;
+      _country = location['country'] as String;
       _isLoading = false;
       notifyListeners();
       
@@ -82,7 +82,7 @@ class WeatherProvider extends ChangeNotifier {
 
       _weather = weather;
       _city = location['city'] as String;
-      _country = location['countryName'] as String;
+      _country = location['country'] as String;
       _isLoading = false;
       notifyListeners();
     } catch (e) {

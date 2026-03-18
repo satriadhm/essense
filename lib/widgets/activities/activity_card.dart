@@ -18,72 +18,61 @@ class ActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width ?? 300,
-      padding: const EdgeInsets.all(14),
+      width: width ?? double.infinity,
+      height: 120,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: AppGradients.cardShimmer,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.borderCyan.withValues(alpha: 0.5)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Perfume icon
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             child: Container(
-              width: 70, height: 100,
+              width: 80,
+              height: 80,
               color: AppColors.cardBg,
-              child: Image.asset(
-                imageAsset,
-                fit: BoxFit.contain,
-              ),
+              child: Image.asset(imageAsset, fit: BoxFit.contain),
             ),
           ),
           const SizedBox(width: 12),
-
-          // Content
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(date, style: AppTextStyles.cardSub),
-                const SizedBox(height: 6),
-                Text(title,
-                    style: AppTextStyles.cardTitle,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis),
-                const Spacer(),
+                Text(
+                  date,
+                  style: AppTextStyles.cardSub.copyWith(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Expanded(
+                  child: Text(
+                    '"$title"',
+                    style: AppTextStyles.cardTitle.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 4),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Share button (curved arrow)
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {},
-                      icon: const Icon(Icons.reply_rounded,
-                          color: AppColors.textSecondary, size: 18),
-                    ),
-                    const SizedBox(width: 12),
-                    // Download button
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {},
-                      icon: const Icon(Icons.download_outlined,
-                          color: AppColors.textSecondary, size: 18),
-                    ),
-                    const Spacer(),
-                    // Arrow
-                    Container(
-                      width: 28, height: 28,
-                      decoration: BoxDecoration(
-                        color: AppColors.accentPurple.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.arrow_forward_ios_rounded,
-                          color: AppColors.accentViolet, size: 12),
-                    ),
+                    const _ActionIcon(icon: Icons.favorite_border_rounded),
+                    const SizedBox(width: 10),
+                    const _ActionIcon(icon: Icons.bookmark_border_rounded),
+                    const SizedBox(width: 10),
+                    const _ActionIcon(icon: Icons.share_outlined),
                   ],
                 ),
               ],
@@ -91,6 +80,21 @@ class ActivityCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ActionIcon extends StatelessWidget {
+  final IconData icon;
+
+  const _ActionIcon({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
+      onTap: () {},
+      radius: 16,
+      child: Icon(icon, color: AppColors.textSecondary, size: 18),
     );
   }
 }

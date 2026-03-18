@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/header/user_greeting_widget.dart';
-import '../widgets/header/location_pill_widget.dart';
 import '../widgets/dashboard/dashboard_grid.dart';
 import '../widgets/cards/essence_analysis_banner.dart';
 import '../widgets/quick_actions/quick_action_grid.dart';
@@ -12,111 +10,174 @@ import '../services/weather_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showBottomNav;
-  final VoidCallback? onAnalyzerTap;
+  final VoidCallback? onAnalyzeTap;
   final VoidCallback? onChatMiaTap;
   final VoidCallback? onARTap;
   final VoidCallback? onClosetTap;
+  final VoidCallback? onDiscoverTap;
 
   const HomeScreen({
     super.key,
     this.showBottomNav = true,
-    this.onAnalyzerTap,
+    this.onAnalyzeTap,
     this.onChatMiaTap,
     this.onARTap,
     this.onClosetTap,
+    this.onDiscoverTap,
   });
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentNavIndex = 0; // Home tab when standalone
+  int _currentNavIndex = 0;
+  late final ScrollController _scrollController;
+  double _scrollOffset = 0;
 
   @override
   void initState() {
     super.initState();
-    // Fetch weather data when the screen initializes
+    _scrollController = ScrollController()
+      ..addListener(() {
+        if (!mounted) return;
+        setState(() => _scrollOffset = _scrollController.offset);
+      });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<WeatherProvider>(context, listen: false)
-          .fetchWeatherByLocation();
+      Provider.of<WeatherProvider>(
+        context,
+        listen: false,
+      ).fetchWeatherByLocation();
     });
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    const heroHeight = 240.0;
+    final hideProgress = (_scrollOffset / 220).clamp(0.0, 1.0);
+    final heroTop = -(heroHeight * hideProgress);
+    final heroOpacity = 1.0 - hideProgress;
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
       backgroundColor: Colors.transparent,
-      body: CustomScrollView(
+      body: Stack(
+        children: [
+          Positioned(
+            top: heroTop,
+            left: 0,
+            right: 0,
+            child: Opacity(
+              opacity: heroOpacity,
+              child: SizedBox(
+                height: heroHeight,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      'assets/images/hero.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const SizedBox.shrink(),
+                    ),
+                    Container(color: Colors.black.withValues(alpha: 0.4)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          CustomScrollView(
+            controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // ─── HEADER ───────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.screenHorizontal,
-                    AppSpacing.headerTop,
+                    AppSpacing.headerTop + 8,
                     AppSpacing.screenHorizontal,
                     0,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Flexible(
-                        flex: 1,
-                        child: UserGreetingWidget(
-                          avatarUrl: 'assets/images/avatar.png',
-                          name: 'Monica',
-                          subtitle: 'Ready to wear your best fragrance?',
+                      const Icon(
+                        Icons.menu_rounded,
+                        size: 24,
+                        color: AppColors.textPrimary,
+                      ),
+                      const Text(
+                        'ESSENSE',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textPrimary,
+                          letterSpacing: 0.4,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.end,
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.search_rounded,
+                            size: 24,
+                            color: AppColors.textPrimary,
+                          ),
+                          SizedBox(width: 12),
+                          Icon(
+                            Icons.notifications_none_rounded,
+                            size: 24,
+                            color: AppColors.textPrimary,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenHorizontal,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Good Morning,',
+                        style: AppTextStyles.greeting.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      RichText(
+                        text: TextSpan(
                           children: [
-                            GestureDetector(
-                              onTap: () {},
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: AppColors.cardBg.withValues(alpha: 0.6),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppColors.cardBorder.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.settings_rounded,
-                                  color: AppColors.textSecondary,
-                                  size: 20,
-                                ),
+                            TextSpan(
+                              text: 'Jasmine',
+                              style: AppTextStyles.greeting.copyWith(
+                                fontSize: 28,
+                                height: 1.2,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Consumer<WeatherProvider>(
-                                builder: (context, weatherProvider, child) {
-                                  final city = weatherProvider.city ?? 'Location';
-                                  
-                                  // Get flag emoji based on country code
-                                  String getFlagEmoji(String countryCode) {
-                                    if (countryCode.isEmpty) return '📍';
-                                    final codePoints = countryCode
-                                        .toUpperCase()
-                                        .codeUnits
-                                        .map((code) => code + 127397);
-                                    return String.fromCharCodes(codePoints);
-                                  }
-                                  
-                                  return LocationPillWidget(
-                                    city: city,
-                                    flagEmoji: getFlagEmoji(weatherProvider.country ?? ''),
-                                  );
-                                },
+                            const TextSpan(text: '  '),
+                            const TextSpan(
+                              text: '🔥',
+                              style: TextStyle(fontSize: 24),
+                            ),
+                            TextSpan(
+                              text: '7',
+                              style: AppTextStyles.greeting.copyWith(
+                                color: AppColors.accentOrange,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 20,
+                                height: 1.2,
                               ),
                             ),
                           ],
@@ -126,207 +187,197 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-              // ─── DASHBOARD GRID (Weather + Device + Cartridge) ──────────
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
               const SliverToBoxAdapter(
                 child: DashboardGrid(
                   batteryPercent: 65,
                   cartridgeVolumePercent: 70,
                 ),
               ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sectionGap)),
-
-              // ─── ESSENCE ANALYSIS BANNER ──────────────────────────────
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.sectionGap),
+              ),
               const SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenHorizontal),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenHorizontal,
+                  ),
                   child: EssenceAnalysisBanner(),
                 ),
               ),
-
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-              // ─── QUICK ACTIONS ────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenHorizontal),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenHorizontal,
+                  ),
                   child: QuickActionGrid(
-                    onAnalyzerTap: widget.onAnalyzerTap,
+                    onAnalyzeTap: widget.onAnalyzeTap,
                     onChatMiaTap: widget.onChatMiaTap,
                     onARTap: widget.onARTap,
                     onClosetTap: widget.onClosetTap,
+                    onDiscoverTap: widget.onDiscoverTap,
                   ),
                 ),
               ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-              // ─── ACTIVITIES SECTION ───────────────────────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenHorizontal),
-                  child: Text('Activities', style: AppTextStyles.sectionTitle),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-              // Horizontal scroll — 75% card width for natural peek effect
-              SliverToBoxAdapter(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final cardWidth =
-                        (constraints.maxWidth * 0.75).clamp(260.0, 320.0);
-                    return SizedBox(
-                      height: 160,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(
-                          left: AppSpacing.screenHorizontal,
-                          right: 80,
-                        ),
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        clipBehavior: Clip.none,
-                        itemCount: 5,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(width: AppSpacing.cardGap),
-                        itemBuilder: (context, index) => ActivityCard(
-                          date: '28 Jan 2026',
-                          title:
-                              'The Urban Shield — Optimized for High Humidity',
-                          imageAsset: index % 2 == 0
-                              ? 'assets/images/activity_card_1.png'
-                              : 'assets/images/activity_card_2.png',
-                          width: cardWidth,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-              // Photo strip below activities
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 72,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenHorizontal),
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: 6,
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
-                    itemBuilder: (context, index) => ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadius.small),
-                      child: Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBg,
-                          borderRadius: BorderRadius.circular(AppRadius.small),
-                          border: Border.all(
-                            color: AppColors.cardBorder.withValues(alpha: 0.6),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.image_rounded,
-                          color: AppColors.textMuted,
-                          size: 28,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
-
-              // ─── PROMO BANNER ─────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenHorizontal),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.card),
-                    child: Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            const Color(0xFF1A1A2E),
-                            const Color(0xFF16213E),
-                            const Color(0xFF0F3460).withValues(alpha: 0.9),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: AppColors.cardBorder.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          // Decorative face/profile silhouettes
-                          Positioned(
-                            left: 20,
-                            top: 0,
-                            bottom: 0,
-                            child: Opacity(
-                              opacity: 0.15,
-                              child: Icon(
-                                Icons.face_rounded,
-                                size: 80,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 30,
-                            top: 0,
-                            bottom: 0,
-                            child: Opacity(
-                              opacity: 0.12,
-                              child: Icon(
-                                Icons.face_rounded,
-                                size: 70,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const Center(
-                            child: Text(
-                              'Featured',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenHorizontal,
+                  ),
+                  child: Text(
+                    'LAST WEAR',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      letterSpacing: 0.8,
                     ),
                   ),
                 ),
               ),
-
-              // Bottom padding for floating nav bar
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.screenHorizontal,
+                    12,
+                    AppSpacing.screenHorizontal,
+                    0,
+                  ),
+                  child: const ActivityCard(
+                    date: 'Yesterday · Paris, FR',
+                    title:
+                        'Your most stable wear this month — the scent held beautifully through the afternoon.',
+                    imageAsset: 'assets/images/activity_card_2.png',
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenHorizontal,
+                  ),
+                  child: Text(
+                    'DAILY UPDATES',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: AppSpacing.navBarHeight + AppSpacing.navBarBottom + 16,
+                  height: 240,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.screenHorizontal,
+                      12,
+                      AppSpacing.screenHorizontal,
+                      0,
+                    ),
+                    physics: const BouncingScrollPhysics(),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 3,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 12),
+                    itemBuilder: (_, index) => _DailyUpdateCard(
+                      imageAsset: index == 0
+                          ? 'assets/images/mon_paris.png'
+                          : index == 1
+                          ? 'assets/images/activity_card_1.png'
+                          : 'assets/images/activity_card_2.png',
+                      title: index == 0 ? 'MON PARIS' : 'ESSENSE EDITORIAL',
+                      subtitle: index == 0
+                          ? 'Yves Saint Laurent'
+                          : 'Daily Picks',
+                    ),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height:
+                      AppSpacing.navBarHeight + AppSpacing.navBarBottom + 16,
                 ),
               ),
             ],
           ),
+        ],
+      ),
       bottomNavigationBar: widget.showBottomNav
           ? CustomBottomNav(
               currentIndex: _currentNavIndex,
               onTap: (i) => setState(() => _currentNavIndex = i),
             )
           : null,
+    );
+  }
+}
+
+class _DailyUpdateCard extends StatelessWidget {
+  final String imageAsset;
+  final String title;
+  final String subtitle;
+
+  const _DailyUpdateCard({
+    required this.imageAsset,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              imageAsset,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  Container(color: AppColors.cardBgLight),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.2),
+                    Colors.black.withValues(alpha: 0.4),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: 14,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.cardTitle.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.cardSub.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

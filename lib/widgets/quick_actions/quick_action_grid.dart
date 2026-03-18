@@ -17,57 +17,67 @@ class QuickActionItem {
 }
 
 class QuickActionGrid extends StatelessWidget {
-  final VoidCallback? onAnalyzerTap;
+  final VoidCallback? onAnalyzeTap;
   final VoidCallback? onChatMiaTap;
   final VoidCallback? onARTap;
   final VoidCallback? onClosetTap;
+  final VoidCallback? onDiscoverTap;
 
   const QuickActionGrid({
     super.key,
-    this.onAnalyzerTap,
+    this.onAnalyzeTap,
     this.onChatMiaTap,
     this.onARTap,
     this.onClosetTap,
+    this.onDiscoverTap,
   });
 
   List<QuickActionItem> get _items => [
     QuickActionItem(
-      label: 'Analyzer',
-      imagePath: 'assets/images/analysis.png',
-      iconColor: AppColors.accentBlue,
-      onTap: onAnalyzerTap,
+      label: 'Scent\nMatch',
+      imagePath: 'assets/images/scent.png',
+      iconColor: AppColors.accentCyan,
+      onTap: onAnalyzeTap,
     ),
     QuickActionItem(
-      label: 'Chat Mia!',
-      imagePath: 'assets/images/chat_mia.png',
-      iconColor: const Color(0xFF60A5FA),
-      onTap: onChatMiaTap,
+      label: 'Discover',
+      imagePath: 'assets/images/discover.png',
+      iconColor: const Color(0xFF7DD3FC),
+      onTap: onDiscoverTap,
     ),
     QuickActionItem(
       label: 'Augmented\nReality',
-      imagePath: 'assets/images/check_cartridge.png',
-      iconColor: AppColors.accentPurple,
+      imagePath: 'assets/images/ar.png',
+      iconColor: AppColors.accentCyan,
       onTap: onARTap,
     ),
     QuickActionItem(
-      label: 'Your Closet',
+      label: 'ChatMia',
+      imagePath: 'assets/images/chat_mia.png',
+      iconColor: AppColors.accentGold,
+      onTap: onChatMiaTap,
+    ),
+    QuickActionItem(
+      label: 'My Closet',
       imagePath: 'assets/images/closet.png',
-      iconColor: const Color(0xFF7DD3FC),
+      iconColor: AppColors.accentOrange,
       onTap: onClosetTap,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        for (int i = 0; i < _items.length; i++)
-          Flexible(
-            flex: 1,
-            child: _QuickActionButton(item: _items[i]),
-          ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: [
+          for (int i = 0; i < _items.length; i++) ...[
+            _QuickActionButton(item: _items[i]),
+            if (i != _items.length - 1) const SizedBox(width: 12),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -78,48 +88,47 @@ class _QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final size = (constraints.maxWidth - 8).clamp(48.0, 72.0);
-        return GestureDetector(
-          onTap: item.onTap,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: size,
-                height: size,
-                child: item.imagePath != null
-                    ? Image.asset(
-                        item.imagePath!,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          // Fallback to icon if image fails to load
-                          return Icon(
-                            Icons.image_not_supported_rounded,
-                            color: item.iconColor ?? AppColors.accentPurple,
-                            size: size,
-                          );
-                        },
-                      )
-                    : Icon(
-                        item.icon ?? Icons.circle_rounded,
-                        color: item.iconColor ?? AppColors.accentPurple,
-                        size: size,
-                      ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                item.label,
-                style: AppTextStyles.iconLabel,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        );
-      },
+    const iconSize = 40.0;
+    return SizedBox(
+      width: 70,
+      height: 90,
+      child: GestureDetector(
+        onTap: item.onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: iconSize,
+              height: iconSize,
+              child: item.imagePath != null
+                  ? Image.asset(
+                      item.imagePath!,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          Icons.image_not_supported_rounded,
+                          color: item.iconColor ?? AppColors.accentCyan,
+                          size: iconSize,
+                        );
+                      },
+                    )
+                  : Icon(
+                      item.icon ?? Icons.circle_rounded,
+                      color: item.iconColor ?? AppColors.accentCyan,
+                      size: iconSize,
+                    ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.label,
+              style: AppTextStyles.iconLabel.copyWith(fontSize: 12),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

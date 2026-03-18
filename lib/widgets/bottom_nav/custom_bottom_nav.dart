@@ -5,69 +5,74 @@ class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
   const CustomBottomNav({
-    super.key, required this.currentIndex, required this.onTap,
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
   });
 
-  static const _icons = [
-    Icons.home_rounded,
-    Icons.article_rounded,   // Details
-    Icons.view_in_ar_rounded, // VR
-    Icons.person_rounded,
+  static const _items = [
+    (icon: Icons.home_rounded, label: 'Home'),
+    (icon: Icons.local_bar_rounded, label: 'Details'),
+    (icon: Icons.groups_rounded, label: 'Community'),
+    (icon: Icons.person_outline_rounded, label: 'Profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final systemBottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final bottomInset = systemBottomInset > 12 ? systemBottomInset : 12.0;
+
     return Container(
-      height: AppSpacing.navBarHeight,
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.screenHorizontal,
-        0,
-        AppSpacing.screenHorizontal,
-        AppSpacing.navBarBottom,
-      ),
+      padding: EdgeInsets.only(bottom: bottomInset),
       decoration: BoxDecoration(
         color: AppColors.navBarBg,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+        border: Border(
+          top: BorderSide(
+            color: AppColors.cardBgLight.withValues(alpha: 0.9),
+            width: 1,
           ),
-        ],
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(_icons.length, (i) {
-          final isActive = i == currentIndex;
-          return GestureDetector(
-            onTap: () => onTap(i),
-            behavior: HitTestBehavior.opaque,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: isActive
-                    ? AppColors.activeNavPill
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: SizedBox(
+        height: AppSpacing.navBarHeight,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(_items.length, (i) {
+            final isActive = i == currentIndex;
+            final item = _items[i];
+            return GestureDetector(
+              onTap: () => onTap(i),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: isActive
+                          ? AppColors.accentOrange
+                          : AppColors.textSecondary,
+                      size: 24,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.label,
+                      style: AppTextStyles.iconLabel.copyWith(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: isActive
+                            ? AppColors.accentOrange
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    _icons[i],
-                    color: isActive
-                        ? AppColors.bgDeep
-                        : AppColors.textSecondary,
-                    size: 24,
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }

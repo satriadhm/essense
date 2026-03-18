@@ -147,36 +147,7 @@ class _PerfumeDetailScreenState extends State<PerfumeDetailScreen> {
                   child: _buildPerfumeBottleImage(),
                 ),
               ),
-              // Layer 3 — Product label pill
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 8,
-                child: Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.white.withOpacity(0.3)),
-                          color: Colors.white.withOpacity(0.05),
-                        ),
-                        child: Text(
-                          'YSL Libre Perfume',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+
             ],
           );
         },
@@ -187,9 +158,9 @@ class _PerfumeDetailScreenState extends State<PerfumeDetailScreen> {
   Widget _buildPerfumeBottleImage() {
     try {
       return Image.asset(
-        'assets/images/ysl_libre.png',
-        height: 200,
-        fit: BoxFit.contain,
+        'assets/images/activity_card_2.png',
+        height: 400,
+        fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => _buildPerfumeBottleFallback(),
       );
     } catch (_) {
