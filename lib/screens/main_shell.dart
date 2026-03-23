@@ -5,7 +5,7 @@ import '../widgets/bottom_nav/custom_bottom_nav.dart';
 import 'ar_visualization_screen.dart';
 import 'community_screen.dart';
 import 'home_screen.dart';
-import 'perfume_detail_screen.dart';
+import 'journal_screen.dart';
 import 'user_profile_screen.dart';
 
 /// Main shell that hosts the bottom nav and switches between screens.
@@ -29,7 +29,7 @@ class _MainShellState extends State<MainShell> {
       onClosetTap: () => setState(() => _currentNavIndex = 3),
       onDiscoverTap: () => setState(() => _currentNavIndex = 1),
     ),
-    const PerfumeDetailScreen(showBottomNav: false),
+    const JournalScreen(showBottomNav: false),
     const CommunityScreen(showBottomNav: false),
     const UserProfileScreen(showBottomNav: false),
   ];

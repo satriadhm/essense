@@ -22,6 +22,7 @@ class AppColors {
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFA0A0A0);
   static const Color textMuted = Color(0xFF6B7280);
+  static const Color textLight = Color(0xFFD1D5DB);
 
   // Misc
   static const Color divider = Color(0xFF1E2D5A);
@@ -53,6 +54,15 @@ class AppColors {
   static const Color analysisLightSurface = Color(0xFFE5E7EB);
   static const Color analysisMutedCyan = Color(0xFF60A5FA);
   static const Color analysisGolden = Color(0xFFFFD700);
+  static const Color warningRed = Color(0xFFFF6B6B);
+
+  // Journal palette
+  static const Color journalCalm = Color(0xFF8B3AED);
+  static const Color journalEnergy = Color(0xFFFFD700);
+  static const Color journalNeutral = Color(0xFF4DD9FF);
+  static const Color journalDarkBlue = Color(0xFF1E3A8A);
+  static const Color textJournalSecondary = Color(0xFFD1D5DB);
+  static const Color textJournalMuted = Color(0xFF9CA3AF);
 }
 
 class AppGradients {

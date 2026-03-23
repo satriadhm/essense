@@ -3,38 +3,24 @@ import 'dart:ui';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../services/camera_service.dart';
-
-// ═══════════════════════════════════════
-// GREYSCALE MATRIX
-// ═══════════════════════════════════════
-const _kGreyscaleMatrix = <double>[
-  0.2126, 0.7152, 0.0722, 0, 0,
-  0.2126, 0.7152, 0.0722, 0, 0,
-  0.2126, 0.7152, 0.0722, 0, 0,
-  0,      0,      0,      1, 0,
-];
-
-// Flower asset paths (in assets/images/ for consistency with existing app)
-const _kGalleryBg = 'assets/images/gallery_bg.jpg';
-const _kFlowerYellowLeaf = 'assets/images/flower_yellow_leaf.png';
-const _kFlowerPinkLily = 'assets/images/flower_pink_lily.png';
-const _kFlowerCoralRed = 'assets/images/flower_coral_red.png';
-const _kFlowerPinkSmall = 'assets/images/flower_pink_small.png';
-const _kFlowerOrangeTulip = 'assets/images/flower_orange_tulip.png';
-const _kFlowerSpotted = 'assets/images/flower_spotted.png';
-const _kFlowerHotpinkRight = 'assets/images/flower_hotpink_right.png';
 
 class ARVisualizationScreen extends StatefulWidget {
   final bool showBottomNav;
   final VoidCallback? onBackPressed;
+  final String productName;
+  final double driftRadius;
+  final double estimatedDuration;
 
   const ARVisualizationScreen({
     super.key,
     this.showBottomNav = true,
     this.onBackPressed,
+    this.productName = 'CALM • SILLAGE',
+    this.driftRadius = 2.1,
+    this.estimatedDuration = 6.5,
   });
 
   @override
@@ -43,133 +29,133 @@ class ARVisualizationScreen extends StatefulWidget {
 
 class _ARVisualizationScreenState extends State<ARVisualizationScreen>
     with TickerProviderStateMixin {
-  late AnimationController _floatController;
-  late AnimationController _entranceController;
-  late AnimationController _boosterPulseController;
-  late AnimationController _capturePressController;
-  
+  static const _accentCyan = Color(0xFF4DD9FF);
+  static const _secondaryText = Color(0xFFD1D5DB);
+
   final CameraService _cameraService = CameraService();
+
+  late final AnimationController _entranceController;
+  late final AnimationController _recordingController;
+  late final AnimationController _sillageController;
+
   bool _isCameraInitialized = false;
-  String? _captureMessage;
+  String? _toastMessage;
 
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
-    _floatController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 4000),
-    )..repeat(reverse: true);
-
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 500),
     )..forward();
-
-    _boosterPulseController = AnimationController(
+    _recordingController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
-
-    _capturePressController = AnimationController(
+    _sillageController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    
-    // Initialize camera
+      duration: const Duration(milliseconds: 2600),
+    )..repeat();
     _initializeCamera();
   }
-  
+
   Future<void> _initializeCamera() async {
     try {
       await _cameraService.initializeCamera();
-      setState(() {
-        _isCameraInitialized = true;
-      });
-    } catch (e) {
-      debugPrint('Failed to initialize camera: $e');
-      _showMessage('Camera failed to initialize');
+      if (!mounted) return;
+      setState(() => _isCameraInitialized = true);
+    } catch (_) {
+      if (!mounted) return;
+      _showToast('Camera is unavailable, showing preview fallback.');
     }
-  }
-  
-  void _showMessage(String message) {
-    setState(() {
-      _captureMessage = message;
-    });
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _captureMessage = null;
-        });
-      }
-    });
   }
 
   @override
   void dispose() {
-    _floatController.dispose();
     _entranceController.dispose();
-    _boosterPulseController.dispose();
-    _capturePressController.dispose();
+    _recordingController.dispose();
+    _sillageController.dispose();
     _cameraService.dispose();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
+  }
+
+  void _showToast(String message) {
+    setState(() => _toastMessage = message);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() => _toastMessage = null);
+      }
+    });
+  }
+
+  void _onShare() {
+    _showToast('Sharing #OwnYourEssence...');
+  }
+
+  void _onSave() {
+    _showToast('Saved to Journal.');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Camera live feed background
-          _isCameraInitialized
-              ? _CameraBackground(cameraService: _cameraService)
-              : const _GreyscaleBackground(),
-          
-          // AR flower overlays
-          _ARFlowerOverlays(
-            floatController: _floatController,
-            entranceController: _entranceController,
+          FadeTransition(
+            opacity: CurvedAnimation(
+              parent: _entranceController,
+              curve: const Interval(0, 0.6, curve: Curves.easeOut),
+            ),
+            child: _ARViewLayer(
+              cameraService: _cameraService,
+              isCameraInitialized: _isCameraInitialized,
+              animation: _sillageController,
+            ),
           ),
-          
-          // Top content
-          _TopContent(onBackPressed: widget.onBackPressed),
-          
-          // Bottom controls
-          _BottomControls(
-            boosterPulseController: _boosterPulseController,
-            capturePressController: _capturePressController,
-            onCapturePress: _onCapturePress,
-            cameraService: _cameraService,
-            onCaptureMessage: _showMessage,
+          _ARHeader(
+            recordingAnimation: _recordingController,
+            entranceAnimation: _entranceController,
+            onBack: widget.onBackPressed ?? () => Navigator.of(context).pop(),
           ),
-          
-          // Capture message overlay
-          if (_captureMessage != null)
+          _ProductInfoCard(
+            entranceAnimation: _entranceController,
+            productName: widget.productName,
+            driftRadius: widget.driftRadius,
+            estimatedDuration: widget.estimatedDuration,
+          ),
+          _BottomInfoCard(entranceAnimation: _entranceController),
+          _ActionButtons(
+            entranceAnimation: _entranceController,
+            onShare: _onShare,
+            onSave: _onSave,
+          ),
+          if (_toastMessage != null)
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.3,
-              left: 0,
-              right: 0,
+              top: MediaQuery.sizeOf(context).height * 0.22,
+              left: 24,
+              right: 24,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.black.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: _accentCyan.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Text(
-                    _captureMessage!,
+                    _toastMessage!,
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.montserrat(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
                       color: Colors.white,
-                      letterSpacing: 0.5,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
                     ),
                   ),
                 ),
@@ -179,636 +165,437 @@ class _ARVisualizationScreenState extends State<ARVisualizationScreen>
       ),
     );
   }
-
-  void _onCapturePress() {
-    _capturePressController.forward(from: 0);
-  }
 }
 
-// ═══════════════════════════════════════
-// LAYER 1 — GREYSCALE BACKGROUND
-// ═══════════════════════════════════════
+class _ARViewLayer extends StatelessWidget {
+  const _ARViewLayer({
+    required this.cameraService,
+    required this.isCameraInitialized,
+    required this.animation,
+  });
 
-class _GreyscaleBackground extends StatelessWidget {
-  const _GreyscaleBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      opacity: 1,
-      duration: const Duration(milliseconds: 600),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          ColorFiltered(
-            colorFilter: const ColorFilter.matrix(_kGreyscaleMatrix),
-            child: Image.asset(
-              _kGalleryBg,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-              errorBuilder: (context, error, stackTrace) => _GalleryFallback(),
-            ),
-          ),
-          Container(
-            color: Colors.black.withValues(alpha: 0.25),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════
-// LAYER 1B — CAMERA BACKGROUND
-// ═══════════════════════════════════════
-
-class _CameraBackground extends StatelessWidget {
   final CameraService cameraService;
-
-  const _CameraBackground({required this.cameraService});
+  final bool isCameraInitialized;
+  final Animation<double> animation;
 
   @override
   Widget build(BuildContext context) {
     final controller = cameraService.controller;
-    
-    if (controller == null || !controller.value.isInitialized) {
-      return Container(
-        color: Colors.black,
-        child: const Center(
-          child: CircularProgressIndicator(
-            color: Colors.white,
-          ),
-        ),
-      );
-    }
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Camera preview
-        CameraPreview(controller),
-        
-        // Dark overlay for AR effect
-        Container(
-          color: Colors.black.withValues(alpha: 0.15),
-        ),
-        
-        // Grid overlay (optional AR grid)
-        CustomPaint(
-          painter: _ARGridPainter(),
-          size: Size.infinite,
-        ),
-      ],
-    );
-  }
-}
-
-class _ARGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
-      ..strokeWidth = 0.5;
-
-    const gridSize = 60.0;
-    
-    // Vertical lines
-    for (int i = 0; i <= (size.width / gridSize).ceil(); i++) {
-      canvas.drawLine(
-        Offset(i * gridSize, 0),
-        Offset(i * gridSize, size.height),
-        paint,
-      );
-    }
-
-    // Horizontal lines
-    for (int i = 0; i <= (size.height / gridSize).ceil(); i++) {
-      canvas.drawLine(
-        Offset(0, i * gridSize),
-        Offset(size.width, i * gridSize),
-        paint,
-      );
-    }
-    
-    // Center focus circle
-    final centerPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.12)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    
-    canvas.drawCircle(
-      Offset(size.width / 2, size.height / 2),
-      80,
-      centerPaint,
-    );
-    
-    // Center crosshair
-    const crossSize = 20.0;
-    canvas.drawLine(
-      Offset(size.width / 2 - crossSize, size.height / 2),
-      Offset(size.width / 2 + crossSize, size.height / 2),
-      centerPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width / 2, size.height / 2 - crossSize),
-      Offset(size.width / 2, size.height / 2 + crossSize),
-      centerPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _GalleryFallback extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF2A2A2A),
-            const Color(0xFF1A1A1A),
-            const Color(0xFF0D0D0D),
-          ],
-        ),
-      ),
-      child: CustomPaint(
-        painter: _GalleryPlaceholderPainter(),
-      ),
-    );
-  }
-}
-
-class _GalleryPlaceholderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    for (int i = 0; i < 4; i++) {
-      final rect = Rect.fromLTWH(40.0 + i * 90.0, 120.0, 70, 90);
-      canvas.drawRect(rect, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// ═══════════════════════════════════════
-// LAYER 2 — AR FLOWER OVERLAYS
-// ═══════════════════════════════════════
-
-class _ARFlowerOverlays extends StatelessWidget {
-  final AnimationController floatController;
-  final AnimationController entranceController;
-
-  const _ARFlowerOverlays({
-    required this.floatController,
-    required this.entranceController,
-  });
-
-  static const _phaseOffsets = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
-
-  @override
-  Widget build(BuildContext context) {
-    final flowers = [
-      _FlowerData(asset: _kFlowerYellowLeaf, top: -40, left: -30, right: null, rotate: -0.3, width: 230, phaseIndex: 0),
-      _FlowerData(asset: _kFlowerPinkLily, top: -20, left: null, right: -30, rotate: 0.15, width: 200, phaseIndex: 1),
-      _FlowerData(asset: _kFlowerPinkSmall, top: 300, left: 180, right: null, rotate: 0.1, width: 180, phaseIndex: 2),
-      _FlowerData(asset: _kFlowerCoralRed, top: 100, left: null, right: -20, rotate: -0.1, width: 170, phaseIndex: 3),
-      _FlowerData(asset: _kFlowerOrangeTulip, top: 650, left: 140, right: null, rotate: 0.05, width: 200, phaseIndex: 4),
-      _FlowerData(asset: _kFlowerSpotted, top: 700, left: 340, right: null, rotate: -0.2, width: 130, phaseIndex: 5),
-      _FlowerData(asset: _kFlowerHotpinkRight, top: 550, left: null, right: -10, rotate: 0.2, width: 180, phaseIndex: 6),
-    ];
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        for (int i = 0; i < flowers.length; i++)
-          _AnimatedFlower(
-            data: flowers[i],
-            floatController: floatController,
-            entranceController: entranceController,
-            staggerDelayMs: i * 100,
-            phaseOffset: _phaseOffsets[i % _phaseOffsets.length],
-          ),
-      ],
-    );
-  }
-}
-
-class _FlowerData {
-  final String asset;
-  final double top;
-  final double? left;
-  final double? right;
-  final double rotate;
-  final double width;
-  final int phaseIndex;
-
-  _FlowerData({
-    required this.asset,
-    required this.top,
-    this.left,
-    this.right,
-    required this.rotate,
-    required this.width,
-    required this.phaseIndex,
-  });
-}
-
-class _AnimatedFlower extends StatelessWidget {
-  final _FlowerData data;
-  final AnimationController floatController;
-  final AnimationController entranceController;
-  final int staggerDelayMs;
-  final double phaseOffset;
-
-  const _AnimatedFlower({
-    required this.data,
-    required this.floatController,
-    required this.entranceController,
-    required this.staggerDelayMs,
-    required this.phaseOffset,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([floatController, entranceController]),
-      builder: (context, child) {
-        final entranceProgress = (entranceController.value * 800 - staggerDelayMs) / 700;
-        final clampedProgress = entranceProgress.clamp(0.0, 1.0);
-        final slideY = (1 - Curves.easeOut.transform(clampedProgress)) * 0.08;
-        final opacity = Curves.easeOut.transform(clampedProgress);
-        final floatY = math.sin(floatController.value * 2 * math.pi + phaseOffset) * 6;
-
-        return Positioned(
-          top: data.top + floatY,
-          left: data.left,
-          right: data.right,
-          child: Opacity(
-            opacity: opacity,
-            child: Transform.translate(
-              offset: Offset(0, MediaQuery.of(context).size.height * slideY),
-              child: Transform.rotate(
-                angle: data.rotate,
-                child: Image.asset(
-                  data.asset,
-                  width: data.width,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => _FlowerPlaceholder(width: data.width),
-                ),
+        if (isCameraInitialized &&
+            controller != null &&
+            controller.value.isInitialized)
+          CameraPreview(controller)
+        else
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF1B1E24), Color(0xFF0B0D11)],
               ),
             ),
           ),
-        );
-      },
-    );
-  }
-}
-
-class _FlowerPlaceholder extends StatelessWidget {
-  final double width;
-
-  const _FlowerPlaceholder({required this.width});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: width * 1.2,
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          colors: [
-            const Color(0xFFE91E63).withValues(alpha: 0.9),
-            const Color(0xFFE91E63).withValues(alpha: 0.5),
-            Colors.transparent,
-          ],
+        Container(color: const Color(0xFF4DD9FF).withValues(alpha: 0.05)),
+        AnimatedBuilder(
+          animation: animation,
+          builder: (context, _) {
+            return CustomPaint(
+              painter: _SillagePainter(progress: animation.value),
+            );
+          },
         ),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        Icons.local_florist_rounded,
-        size: width * 0.5,
-        color: Colors.white.withValues(alpha: 0.8),
-      ),
+      ],
     );
   }
 }
 
-// ═══════════════════════════════════════
-// LAYER 3 — TOP CONTENT
-// ═══════════════════════════════════════
+class _ARHeader extends StatelessWidget {
+  const _ARHeader({
+    required this.recordingAnimation,
+    required this.entranceAnimation,
+    required this.onBack,
+  });
 
-class _TopContent extends StatelessWidget {
-  final VoidCallback? onBackPressed;
-  
-  const _TopContent({this.onBackPressed});
+  final Animation<double> recordingAnimation;
+  final Animation<double> entranceAnimation;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Back button
-          Padding(
-            padding: const EdgeInsets.only(top: 20, left: 24, right: 24),
-            child: GestureDetector(
-              onTap: () {
-                // Navigate back to home screen via callback
-                if (onBackPressed != null) {
-                  onBackPressed!();
-                } else {
-                  Navigator.of(context).pop();
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
+      bottom: false,
+      child: FadeTransition(
+        opacity: CurvedAnimation(
+          parent: entranceAnimation,
+          curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+        ),
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, -0.08),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(
+              parent: entranceAnimation,
+              curve: const Interval(0.2, 0.9, curve: Curves.easeOut),
             ),
           ),
-          // Title block
-          Padding(
-            padding: const EdgeInsets.only(top: 40, left: 24, right: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
               children: [
-                Text(
-                  'ESSENCE AUGMENTED REALITY',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: 2.5,
-                    shadows: const [
-                      Shadow(
-                        color: Colors.black45,
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
+                InkWell(
+                  onTap: onBack,
+                  borderRadius: BorderRadius.circular(24),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.chevron_left,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  'Calming Lavender Bloom (+12%)\nSoothing your detected stress peaks.',
-                  style: GoogleFonts.cormorantGaramond(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white.withValues(alpha: 0.85),
-                    height: 1.5,
-                    shadows: const [
-                      Shadow(color: Colors.black38, blurRadius: 6),
+                const Spacer(),
+                Container(
+                  width: 60,
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: Row(
+                    children: [
+                      AnimatedBuilder(
+                        animation: recordingAnimation,
+                        builder: (context, _) => Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(
+                              0xFFFF6B6B,
+                            ).withValues(alpha: 0.5 + (recordingAnimation.value * 0.5)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Rec',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-// ═══════════════════════════════════════
-// LAYER 4 — BOTTOM CONTROLS
-// ═══════════════════════════════════════
-
-class _BottomControls extends StatefulWidget {
-  final AnimationController boosterPulseController;
-  final AnimationController capturePressController;
-  final VoidCallback onCapturePress;
-  final CameraService cameraService;
-  final Function(String) onCaptureMessage;
-
-  const _BottomControls({
-    required this.boosterPulseController,
-    required this.capturePressController,
-    required this.onCapturePress,
-    required this.cameraService,
-    required this.onCaptureMessage,
+class _ProductInfoCard extends StatelessWidget {
+  const _ProductInfoCard({
+    required this.entranceAnimation,
+    required this.productName,
+    required this.driftRadius,
+    required this.estimatedDuration,
   });
 
+  final Animation<double> entranceAnimation;
+  final String productName;
+  final double driftRadius;
+  final double estimatedDuration;
+
   @override
-  State<_BottomControls> createState() => _BottomControlsState();
+  Widget build(BuildContext context) {
+    final animation = CurvedAnimation(
+      parent: entranceAnimation,
+      curve: const Interval(0.3, 0.9, curve: Curves.easeOutBack),
+    );
+
+    return Positioned(
+      top: 80,
+      left: 0,
+      right: 0,
+      child: FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.95, end: 1).animate(animation),
+          child: Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  width: 280,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: const Color(0xFF4DD9FF).withValues(alpha: 0.6),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 32,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        productName,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.montserrat(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Drift radius: ${driftRadius.toStringAsFixed(1)}m',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFD1D5DB),
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Est. duration: ${estimatedDuration.toStringAsFixed(1)}h',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFD1D5DB),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _BottomControlsState extends State<_BottomControls> {
-  bool _isCapturing = false;
+class _BottomInfoCard extends StatelessWidget {
+  const _BottomInfoCard({required this.entranceAnimation});
 
-  Future<void> _handleCapture() async {
-    if (_isCapturing || !widget.cameraService.isInitialized) return;
+  final Animation<double> entranceAnimation;
 
-    try {
-      setState(() => _isCapturing = true);
-      widget.onCapturePress();
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-      final filePath = await widget.cameraService.capturePhoto();
-      widget.onCaptureMessage('Photo captured: ${filePath?.split('/').last}');
-    } catch (e) {
-      widget.onCaptureMessage('Failed to capture photo');
-      debugPrint('Capture error: $e');
-    } finally {
-      setState(() => _isCapturing = false);
-    }
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: FadeTransition(
+        opacity: CurvedAnimation(
+          parent: entranceAnimation,
+          curve: const Interval(0.4, 1, curve: Curves.easeOut),
+        ),
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.12),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(
+              parent: entranceAnimation,
+              curve: const Interval(0.4, 1, curve: Curves.easeOut),
+            ),
+          ),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 92),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.7),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Your Calm sillage is visualised',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This is how your boosted Libre trails through your environment',
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  style: GoogleFonts.inter(
+                    color: _ARVisualizationScreenState._secondaryText,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
+}
 
-  Future<void> _handleSwitchCamera() async {
-    if (!widget.cameraService.isInitialized) return;
+class _ActionButtons extends StatelessWidget {
+  const _ActionButtons({
+    required this.entranceAnimation,
+    required this.onShare,
+    required this.onSave,
+  });
 
-    try {
-      await widget.cameraService.switchCamera();
-      widget.onCaptureMessage('Camera switched');
-    } catch (e) {
-      widget.onCaptureMessage('Failed to switch camera');
-      debugPrint('Switch camera error: $e');
-    }
-  }
+  final Animation<double> entranceAnimation;
+  final VoidCallback onShare;
+  final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 120),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      left: 16,
+      right: 16,
+      bottom: MediaQuery.of(context).padding.bottom + 20,
+      child: FadeTransition(
+        opacity: CurvedAnimation(
+          parent: entranceAnimation,
+          curve: const Interval(0.5, 1, curve: Curves.easeOut),
+        ),
+        child: Row(
           children: [
-            // Activate Booster button
-            AnimatedBuilder(
-              animation: widget.boosterPulseController,
-              builder: (context, child) {
-                final scale = 1.0 + math.sin(widget.boosterPulseController.value * math.pi) * 0.03;
-                return Transform.scale(
-                  scale: scale,
-                  child: child,
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 60),
-                child: GestureDetector(
-                  onTap: () {},
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 32,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.35),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          'ACTIVATE THE\nBOOSTER',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2.0,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+            Expanded(
+              child: SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: onShare,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0A0E27),
+                    elevation: 4,
+                    shadowColor: Colors.black.withValues(alpha: 0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Share #OwnYourEssence',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
                     ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            // Camera control buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Switch camera button
-                GestureDetector(
-                  onTap: _isCapturing ? null : _handleSwitchCamera,
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.transparent,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        width: 2,
-                      ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: 56,
+                child: OutlinedButton(
+                  onPressed: onSave,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF4DD9FF), width: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      Icons.flip_camera_ios_rounded,
-                      color: Colors.white,
-                      size: 24,
+                  ),
+                  child: Text(
+                    'Save to Journal',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.montserrat(
+                      color: const Color(0xFF4DD9FF),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
                     ),
                   ),
                 ),
-                const SizedBox(width: 24),
-                // Capture button
-                GestureDetector(
-                  onTap: _isCapturing ? null : _handleCapture,
-                  child: AnimatedBuilder(
-                    animation: widget.capturePressController,
-                    builder: (context, child) {
-                      final t = widget.capturePressController.value;
-                      final scale = t < 0.5
-                          ? 1.0 - (t * 2) * 0.08
-                          : 0.92 + ((t - 0.5) * 2) * 0.08;
-                      return Transform.scale(
-                        scale: scale,
-                        child: child,
-                      );
-                    },
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: _isCapturing
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.camera_alt_rounded,
-                              color: Colors.black,
-                              size: 28,
-                            ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 24),
-                // Flash button (placeholder)
-                GestureDetector(
-                  onTap: () {},
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.transparent,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        width: 2,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.flash_on_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+class _SillagePainter extends CustomPainter {
+  const _SillagePainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height * 0.52);
+    final baseRadius = 42 + (progress * 68);
+    final pulse = (math.sin(progress * math.pi * 2) + 1) / 2;
+
+    final ringPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = const Color(0xFF4DD9FF).withValues(alpha: 0.35 - (progress * 0.22));
+
+    canvas.drawCircle(center, baseRadius, ringPaint);
+    canvas.drawCircle(center, baseRadius + 28, ringPaint..strokeWidth = 1.2);
+
+    final particlePaint = Paint()..style = PaintingStyle.fill;
+    for (int i = 0; i < 18; i++) {
+      final seed = (i + 1) * 0.23;
+      final angle = (progress * 2 * math.pi) + (seed * 4);
+      final radius = 22 + ((i * 6) * (0.45 + pulse * 0.55));
+      final x = center.dx + math.cos(angle) * radius;
+      final y = center.dy + math.sin(angle) * radius * 0.65;
+      particlePaint.color = const Color(
+        0xFF4DD9FF,
+      ).withValues(alpha: (0.3 + (0.2 * math.sin(angle))).clamp(0.1, 0.55));
+      canvas.drawCircle(Offset(x, y), 1.8 + (i % 4) * 0.6, particlePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SillagePainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }

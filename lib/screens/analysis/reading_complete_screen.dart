@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'results_page.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/analysis/dot_progression_loader.dart';
 
@@ -36,7 +37,9 @@ class _ReadingCompleteScreenState extends State<ReadingCompleteScreen>
 
   void _onComplete() {
     if (!mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const ResultsPage()));
   }
 
   @override

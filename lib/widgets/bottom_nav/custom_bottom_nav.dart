@@ -12,7 +12,7 @@ class CustomBottomNav extends StatelessWidget {
 
   static const _items = [
     (icon: Icons.home_rounded, label: 'Home'),
-    (icon: Icons.local_bar_rounded, label: 'Details'),
+    (icon: Icons.calendar_month_rounded, label: 'Journal'),
     (icon: Icons.groups_rounded, label: 'Community'),
     (icon: Icons.person_outline_rounded, label: 'Profile'),
   ];
