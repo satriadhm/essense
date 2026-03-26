@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/results_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav/custom_bottom_nav.dart';
 import 'ar_visualization_screen.dart';
@@ -64,6 +65,7 @@ class _MainShellState extends State<MainShell> {
                 ? ARVisualizationScreen(
                     showBottomNav: false,
                     onBackPressed: () => setState(() => _showArScreen = false),
+                    data: ResultsData.demo(),
                   )
                 : IndexedStack(index: _currentNavIndex, children: _screens),
           ),

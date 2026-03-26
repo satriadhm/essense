@@ -49,7 +49,7 @@ class AddFragranceScreen extends StatelessWidget {
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.center,
                       child: Text(
                         "Add the fragrance you're wearing",
                         style: AppTextStyles.bodyLarge,

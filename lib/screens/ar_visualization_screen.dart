@@ -5,22 +5,44 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../models/results_data.dart';
 import '../services/camera_service.dart';
+import '../theme/app_theme.dart';
+
+Color _noteColor(String note) {
+  final n = note.toLowerCase();
+  if (['bergamot', 'lemon', 'citrus', 'grapefruit', 'orange']
+      .any((k) => n.contains(k))) {
+    return const Color(0xFFFFD700);
+  }
+  if (['lavender', 'geranium', 'rose', 'jasmine', 'violet']
+      .any((k) => n.contains(k))) {
+    return const Color(0xFFD4BFEC);
+  }
+  if (['patchouli', 'vetiver', 'sandalwood', 'musk', 'amber', 'tobacco']
+      .any((k) => n.contains(k))) {
+    return const Color(0xFF8B3AED);
+  }
+  if (['aquatic', 'marine', 'sage', 'mint', 'juniper']
+      .any((k) => n.contains(k))) {
+    return const Color(0xFF4DD9FF);
+  }
+  if (['vanilla', 'tonka', 'cinnamon', 'incense'].any((k) => n.contains(k))) {
+    return const Color(0xFFFF9500);
+  }
+  return const Color(0xFF4DD9FF);
+}
 
 class ARVisualizationScreen extends StatefulWidget {
   final bool showBottomNav;
   final VoidCallback? onBackPressed;
-  final String productName;
-  final double driftRadius;
-  final double estimatedDuration;
+  final ResultsData data;
 
   const ARVisualizationScreen({
     super.key,
     this.showBottomNav = true,
     this.onBackPressed,
-    this.productName = 'CALM • SILLAGE',
-    this.driftRadius = 2.1,
-    this.estimatedDuration = 6.5,
+    required this.data,
   });
 
   @override
@@ -30,16 +52,27 @@ class ARVisualizationScreen extends StatefulWidget {
 class _ARVisualizationScreenState extends State<ARVisualizationScreen>
     with TickerProviderStateMixin {
   static const _accentCyan = Color(0xFF4DD9FF);
-  static const _secondaryText = Color(0xFFD1D5DB);
 
   final CameraService _cameraService = CameraService();
 
   late final AnimationController _entranceController;
   late final AnimationController _recordingController;
-  late final AnimationController _sillageController;
+  late final AnimationController _baseLayerController;
+  late final AnimationController _midLayerController;
+  late final AnimationController _topLayerController;
+  late final AnimationController _breathController;
 
   bool _isCameraInitialized = false;
   String? _toastMessage;
+
+  Color get _topColor => _noteColor(widget.data.topNote);
+  Color get _midColor => _noteColor(widget.data.middleNote);
+  Color get _baseColor => _noteColor(widget.data.baseNote);
+
+  double get _driftRadius =>
+      1.6 + (widget.data.gsrPercentage / 100.0) * 1.8;
+  double get _estimatedDuration =>
+      5.0 + (100 - widget.data.gsrPercentage) / 100.0 * 4.5;
 
   @override
   void initState() {
@@ -52,10 +85,22 @@ class _ARVisualizationScreenState extends State<ARVisualizationScreen>
       vsync: this,
       duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
-    _sillageController = AnimationController(
+    _baseLayerController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2600),
+      duration: const Duration(milliseconds: 3200),
     )..repeat();
+    _midLayerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+    _topLayerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+    _breathController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4000),
+    )..repeat(reverse: true);
     _initializeCamera();
   }
 
@@ -74,7 +119,10 @@ class _ARVisualizationScreenState extends State<ARVisualizationScreen>
   void dispose() {
     _entranceController.dispose();
     _recordingController.dispose();
-    _sillageController.dispose();
+    _baseLayerController.dispose();
+    _midLayerController.dispose();
+    _topLayerController.dispose();
+    _breathController.dispose();
     _cameraService.dispose();
     super.dispose();
   }
@@ -111,7 +159,15 @@ class _ARVisualizationScreenState extends State<ARVisualizationScreen>
             child: _ARViewLayer(
               cameraService: _cameraService,
               isCameraInitialized: _isCameraInitialized,
-              animation: _sillageController,
+              topAnimation: _topLayerController,
+              midAnimation: _midLayerController,
+              baseAnimation: _baseLayerController,
+              breathAnimation: _breathController,
+              topColor: _topColor,
+              midColor: _midColor,
+              baseColor: _baseColor,
+              driftRadius: _driftRadius,
+              stressLevel: widget.data.gsrPercentage,
             ),
           ),
           _ARHeader(
@@ -121,11 +177,17 @@ class _ARVisualizationScreenState extends State<ARVisualizationScreen>
           ),
           _ProductInfoCard(
             entranceAnimation: _entranceController,
-            productName: widget.productName,
-            driftRadius: widget.driftRadius,
-            estimatedDuration: widget.estimatedDuration,
+            data: widget.data,
+            topColor: _topColor,
+            midColor: _midColor,
+            baseColor: _baseColor,
+            driftRadius: _driftRadius,
+            estimatedDuration: _estimatedDuration,
           ),
-          _BottomInfoCard(entranceAnimation: _entranceController),
+          _BottomInfoCard(
+            entranceAnimation: _entranceController,
+            data: widget.data,
+          ),
           _ActionButtons(
             entranceAnimation: _entranceController,
             onShare: _onShare,
@@ -171,12 +233,28 @@ class _ARViewLayer extends StatelessWidget {
   const _ARViewLayer({
     required this.cameraService,
     required this.isCameraInitialized,
-    required this.animation,
+    required this.topAnimation,
+    required this.midAnimation,
+    required this.baseAnimation,
+    required this.breathAnimation,
+    required this.topColor,
+    required this.midColor,
+    required this.baseColor,
+    required this.driftRadius,
+    required this.stressLevel,
   });
 
   final CameraService cameraService;
   final bool isCameraInitialized;
-  final Animation<double> animation;
+  final Animation<double> topAnimation;
+  final Animation<double> midAnimation;
+  final Animation<double> baseAnimation;
+  final Animation<double> breathAnimation;
+  final Color topColor;
+  final Color midColor;
+  final Color baseColor;
+  final double driftRadius;
+  final int stressLevel;
 
   @override
   Widget build(BuildContext context) {
@@ -199,14 +277,27 @@ class _ARViewLayer extends StatelessWidget {
               ),
             ),
           ),
-        Container(color: const Color(0xFF4DD9FF).withValues(alpha: 0.05)),
+        Container(color: topColor.withValues(alpha: 0.05)),
         AnimatedBuilder(
-          animation: animation,
-          builder: (context, _) {
-            return CustomPaint(
-              painter: _SillagePainter(progress: animation.value),
-            );
-          },
+          animation: Listenable.merge([
+            topAnimation,
+            midAnimation,
+            baseAnimation,
+            breathAnimation,
+          ]),
+          builder: (context, _) => CustomPaint(
+            painter: _MultiLayerSillagePainter(
+              topProgress: topAnimation.value,
+              midProgress: midAnimation.value,
+              baseProgress: baseAnimation.value,
+              breathProgress: breathAnimation.value,
+              topColor: topColor,
+              midColor: midColor,
+              baseColor: baseColor,
+              driftRadius: driftRadius,
+              stressLevel: stressLevel,
+            ),
+          ),
         ),
       ],
     );
@@ -291,7 +382,9 @@ class _ARHeader extends StatelessWidget {
                             shape: BoxShape.circle,
                             color: const Color(
                               0xFFFF6B6B,
-                            ).withValues(alpha: 0.5 + (recordingAnimation.value * 0.5)),
+                            ).withValues(
+                              alpha: 0.5 + (recordingAnimation.value * 0.5),
+                            ),
                           ),
                         ),
                       ),
@@ -316,16 +409,74 @@ class _ARHeader extends StatelessWidget {
   }
 }
 
+class _NoteLayerDot extends StatelessWidget {
+  const _NoteLayerDot({
+    required this.label,
+    required this.note,
+    required this.layerColor,
+  });
+
+  final String label;
+  final String note;
+  final Color layerColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: layerColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 9,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            note,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              height: 1.15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProductInfoCard extends StatelessWidget {
   const _ProductInfoCard({
     required this.entranceAnimation,
-    required this.productName,
+    required this.data,
+    required this.topColor,
+    required this.midColor,
+    required this.baseColor,
     required this.driftRadius,
     required this.estimatedDuration,
   });
 
   final Animation<double> entranceAnimation;
-  final String productName;
+  final ResultsData data;
+  final Color topColor;
+  final Color midColor;
+  final Color baseColor;
   final double driftRadius;
   final double estimatedDuration;
 
@@ -350,16 +501,16 @@ class _ProductInfoCard extends StatelessWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
-                  width: 280,
+                  width: 300,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
+                    horizontal: 14,
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: const Color(0xFF4DD9FF).withValues(alpha: 0.6),
+                      color: topColor.withValues(alpha: 0.6),
                       width: 2,
                     ),
                     boxShadow: [
@@ -374,26 +525,44 @@ class _ProductInfoCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        productName,
+                        data.fragranceName,
                         textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.montserrat(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      Divider(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        height: 16,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _NoteLayerDot(
+                            label: 'Top',
+                            note: data.topNote,
+                            layerColor: topColor,
+                          ),
+                          _NoteLayerDot(
+                            label: 'Mid',
+                            note: data.middleNote,
+                            layerColor: midColor,
+                          ),
+                          _NoteLayerDot(
+                            label: 'Base',
+                            note: data.baseNote,
+                            layerColor: baseColor,
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 8),
                       Text(
-                        'Drift radius: ${driftRadius.toStringAsFixed(1)}m',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFD1D5DB),
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Est. duration: ${estimatedDuration.toStringAsFixed(1)}h',
+                        '${driftRadius.toStringAsFixed(1)}m · ${estimatedDuration.toStringAsFixed(1)}h est.',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           color: const Color(0xFFD1D5DB),
@@ -413,9 +582,13 @@ class _ProductInfoCard extends StatelessWidget {
 }
 
 class _BottomInfoCard extends StatelessWidget {
-  const _BottomInfoCard({required this.entranceAnimation});
+  const _BottomInfoCard({
+    required this.entranceAnimation,
+    required this.data,
+  });
 
   final Animation<double> entranceAnimation;
+  final ResultsData data;
 
   @override
   Widget build(BuildContext context) {
@@ -453,7 +626,7 @@ class _BottomInfoCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Your Calm sillage is visualised',
+                  '${data.recommendation} Sillage Active',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.montserrat(
                     color: Colors.white,
@@ -461,13 +634,56 @@ class _BottomInfoCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
+                Material(
+                  color: Colors.transparent,
+                  child: Row(
+                    children: [
+                      Text(
+                        'Stress level:',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: (data.gsrPercentage / 100).clamp(0.0, 1.0),
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.12),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              data.gsrPercentage > 65
+                                  ? AppColors.warningRed
+                                  : data.gsrPercentage > 40
+                                      ? AppColors.accentGold
+                                      : AppColors.accentCyan,
+                            ),
+                            minHeight: 5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${data.gsrPercentage}%',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Text(
-                  'This is how your boosted Libre trails through your environment',
+                  '${data.topNote} drifts above you · ${data.middleNote} wraps around · ${data.baseNote} grounds the trail',
                   textAlign: TextAlign.center,
-                  maxLines: 3,
+                  maxLines: 4,
                   style: GoogleFonts.inter(
-                    color: _ARVisualizationScreenState._secondaryText,
+                    color: AppColors.textSecondary,
                     fontSize: 14,
                     height: 1.5,
                   ),
@@ -523,11 +739,11 @@ class _ActionButtons extends StatelessWidget {
                       style: GoogleFonts.montserrat(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: 12,
                       ),
                       children: [
-                        TextSpan(text: 'share\n'),
-                        TextSpan(text: '#OwnYourEssence'),
+                        const TextSpan(text: 'share\n'),
+                        const TextSpan(text: '#OwnYourEssence'),
                       ],
                     ),
                     textAlign: TextAlign.center,
@@ -566,41 +782,159 @@ class _ActionButtons extends StatelessWidget {
   }
 }
 
-class _SillagePainter extends CustomPainter {
-  const _SillagePainter({required this.progress});
+class _MultiLayerSillagePainter extends CustomPainter {
+  const _MultiLayerSillagePainter({
+    required this.topProgress,
+    required this.midProgress,
+    required this.baseProgress,
+    required this.breathProgress,
+    required this.topColor,
+    required this.midColor,
+    required this.baseColor,
+    required this.driftRadius,
+    required this.stressLevel,
+  });
 
-  final double progress;
+  final double topProgress;
+  final double midProgress;
+  final double baseProgress;
+  final double breathProgress;
+  final Color topColor;
+  final Color midColor;
+  final Color baseColor;
+  final double driftRadius;
+  final int stressLevel;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height * 0.52);
-    final baseRadius = 42 + (progress * 68);
-    final pulse = (math.sin(progress * math.pi * 2) + 1) / 2;
-
-    final ringPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..color = const Color(0xFF4DD9FF).withValues(alpha: 0.35 - (progress * 0.22));
-
-    canvas.drawCircle(center, baseRadius, ringPaint);
-    canvas.drawCircle(center, baseRadius + 28, ringPaint..strokeWidth = 1.2);
-
-    final particlePaint = Paint()..style = PaintingStyle.fill;
-    for (int i = 0; i < 18; i++) {
-      final seed = (i + 1) * 0.23;
-      final angle = (progress * 2 * math.pi) + (seed * 4);
-      final radius = 22 + ((i * 6) * (0.45 + pulse * 0.55));
-      final x = center.dx + math.cos(angle) * radius;
-      final y = center.dy + math.sin(angle) * radius * 0.65;
-      particlePaint.color = const Color(
-        0xFF4DD9FF,
-      ).withValues(alpha: (0.3 + (0.2 * math.sin(angle))).clamp(0.1, 0.55));
-      canvas.drawCircle(Offset(x, y), 1.8 + (i % 4) * 0.6, particlePaint);
+  void _drawSoftBlob(
+    Canvas canvas,
+    Offset c,
+    double radius,
+    Color color,
+    double opacity,
+  ) {
+    for (var j = 0; j < 5; j++) {
+      final ox = math.cos(j * 1.23) * 4;
+      final oy = math.sin(j * 1.71) * 4;
+      final paint = Paint()
+        ..style = PaintingStyle.fill
+        ..color = color.withValues(
+          alpha: (opacity * (1.0 - j * 0.16)).clamp(0.02, 1.0),
+        );
+      canvas.drawCircle(c + Offset(ox, oy), radius + j * 2.2, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _SillagePainter oldDelegate) {
-    return oldDelegate.progress != progress;
+  void paint(Canvas canvas, Size size) {
+    final topCount = 20 + (stressLevel * 0.15).round();
+    final midCount = 16 + (stressLevel * 0.10).round();
+    const baseBlobCount = 6;
+
+    final baseCx = size.width / 2;
+    final baseCy = size.height * 0.65;
+    final baseRx = driftRadius * 38;
+    final baseRy = driftRadius * 18;
+
+    for (var i = 0; i < baseBlobCount; i++) {
+      final seed = (i + 1) * 0.37;
+      final angle = baseProgress * 2 * math.pi + seed * 4.2;
+      final ox = math.cos(angle) * baseRx;
+      final oy = math.sin(angle) * baseRy;
+      final blobCenter = Offset(baseCx + ox, baseCy + oy);
+      final r = 60 + (i % 3) * 12 + 6 * math.sin(seed * 3);
+      final op = 0.08 + (i % 4) * 0.015;
+      _drawSoftBlob(canvas, blobCenter, r, baseColor, op);
+    }
+
+    final horizonPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 20
+      ..color = baseColor.withValues(alpha: 0.06);
+    canvas.drawCircle(
+      Offset(baseCx, baseCy),
+      55 + breathProgress * 40,
+      horizonPaint,
+    );
+
+    final midCx = size.width / 2;
+    final midCy = size.height * 0.50;
+    final midRx = driftRadius * 28;
+    final midRy = driftRadius * 16;
+    final ringAlpha = math.max(0.0, 0.3 - midProgress * 0.28);
+    final ringPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = midColor.withValues(alpha: ringAlpha);
+    canvas.drawCircle(
+      Offset(midCx, midCy),
+      50 + midProgress * 90,
+      ringPaint,
+    );
+    canvas.drawCircle(
+      Offset(midCx, midCy),
+      80 + midProgress * 60,
+      ringPaint..strokeWidth = 1,
+    );
+
+    final midParticlePaint = Paint()..style = PaintingStyle.fill;
+    final driftY = math.sin(midProgress * math.pi) * 15;
+    for (var i = 0; i < midCount; i++) {
+      final t = i / math.max(midCount, 1);
+      final angle = midProgress * 2 * math.pi * 1.2 + t * 2 * math.pi;
+      var x = midCx + math.cos(angle) * midRx;
+      var y = midCy + math.sin(angle) * midRy * 0.72 + driftY;
+      final pr = 2.5 + (i % 5) * 0.5;
+      final pa = 0.2 + (i % 7) * 0.035;
+      midParticlePaint.color = midColor.withValues(alpha: pa.clamp(0.2, 0.45));
+      canvas.drawCircle(Offset(x, y), pr, midParticlePaint);
+    }
+
+    final topCx = size.width / 2;
+    final topCy = size.height * 0.35;
+    final topRx = driftRadius * 14;
+    final topRy = driftRadius * 9;
+    final topParticlePaint = Paint()..style = PaintingStyle.fill;
+    final breathMod = 0.7 + breathProgress * 0.3;
+
+    for (var i = 0; i < topCount; i++) {
+      final t = i / math.max(topCount, 1);
+      final angle = topProgress * 2 * math.pi * 2.2 + t * 2 * math.pi;
+      final x = topCx + math.cos(angle) * topRx;
+      final y = topCy + math.sin(angle) * topRy * 0.68;
+      var pr = 1.0 + (i % 4) * 0.4;
+      if (i % 5 == 0) {
+        pr *= 1 + math.sin(topProgress * math.pi * 3 + i) * 0.5;
+      }
+      final baseOp = (0.15 + (i % 8) * 0.045).clamp(0.15, 0.55);
+      topParticlePaint.color = topColor.withValues(
+        alpha: (baseOp * breathMod).clamp(0.05, 1.0),
+      );
+      canvas.drawCircle(Offset(x, y), pr, topParticlePaint);
+    }
+
+    final auraCenter = Offset(size.width / 2, size.height / 2);
+    final auraR = size.width * 0.55 + breathProgress * 30;
+    final auraPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          midColor.withValues(alpha: 0.06),
+          midColor.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 1.0],
+      ).createShader(Rect.fromCircle(center: auraCenter, radius: auraR));
+    canvas.drawCircle(auraCenter, auraR, auraPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MultiLayerSillagePainter oldDelegate) {
+    return oldDelegate.topProgress != topProgress ||
+        oldDelegate.midProgress != midProgress ||
+        oldDelegate.baseProgress != baseProgress ||
+        oldDelegate.breathProgress != breathProgress ||
+        oldDelegate.topColor != topColor ||
+        oldDelegate.midColor != midColor ||
+        oldDelegate.baseColor != baseColor ||
+        oldDelegate.driftRadius != driftRadius ||
+        oldDelegate.stressLevel != stressLevel;
   }
 }

@@ -26,7 +26,7 @@ class EssenceApp extends StatelessWidget {
     return MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => WeatherProvider())],
       child: MaterialApp(
-        title: 'ESSENCE',
+        title: 'ESSENSE',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           scaffoldBackgroundColor: AppColors.bgDeep,

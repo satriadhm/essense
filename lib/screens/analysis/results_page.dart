@@ -79,7 +79,7 @@ class ResultsPage extends StatelessWidget {
                   _ResultsHeader(
                     onBack: () => Navigator.of(context).maybePop(),
                   ).animate().fadeIn(duration: 300.ms),
-                  const PerfumeBottleSection()
+                  PerfumeBottleSection(data: data)
                       .animate()
                       .fadeIn(delay: 100.ms, duration: 300.ms)
                       .slideY(begin: 0.08, end: 0),
@@ -117,8 +117,9 @@ class ResultsPage extends StatelessWidget {
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => const ARVisualizationScreen(
+                              builder: (_) => ARVisualizationScreen(
                                 showBottomNav: false,
+                                data: data,
                               ),
                             ),
                           );
