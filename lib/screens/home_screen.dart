@@ -285,10 +285,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           : index == 1
                           ? 'assets/images/activity_card_1.png'
                           : 'assets/images/activity_card_2.png',
-                      title: index == 0 ? 'MON PARIS' : 'ESSENSE EDITORIAL',
-                      subtitle: index == 0
-                          ? 'Yves Saint Laurent'
-                          : 'Daily Picks',
                     ),
                   ),
                 ),
@@ -315,13 +311,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _DailyUpdateCard extends StatelessWidget {
   final String imageAsset;
-  final String title;
-  final String subtitle;
 
   const _DailyUpdateCard({
     required this.imageAsset,
-    required this.title,
-    required this.subtitle,
   });
 
   @override
@@ -349,30 +341,6 @@ class _DailyUpdateCard extends StatelessWidget {
                     Colors.black.withValues(alpha: 0.4),
                   ],
                 ),
-              ),
-            ),
-            Positioned(
-              left: 14,
-              right: 14,
-              bottom: 14,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.cardTitle.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.cardSub.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
               ),
             ),
           ],

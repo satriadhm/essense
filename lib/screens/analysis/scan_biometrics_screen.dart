@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 import '../../widgets/analysis/fingerprint_scanner.dart';
+import '../../widgets/analysis/perfume_search_sheet.dart';
 import '../../widgets/analysis/ring_spinner.dart';
 import 'reading_complete_screen.dart';
 
 class ScanBiometricsScreen extends StatefulWidget {
-  const ScanBiometricsScreen({super.key});
+  const ScanBiometricsScreen({super.key, this.selectedPerfume});
+
+  /// Set when the user picks a fragrance from manual search; use when wiring analysis data.
+  final PerfumeOption? selectedPerfume;
 
   @override
   State<ScanBiometricsScreen> createState() => _ScanBiometricsScreenState();

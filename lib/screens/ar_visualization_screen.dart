@@ -518,14 +518,19 @@ class _ActionButtons extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    'Share #OwnYourEssence',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                  child: Text.rich(
+                    TextSpan(
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                      children: [
+                        TextSpan(text: 'share\n'),
+                        TextSpan(text: '#OwnYourEssence'),
+                      ],
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),

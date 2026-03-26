@@ -14,7 +14,7 @@ class EssenceAnalysisBanner extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Container(
-            height: 160,
+            height: 168,
             decoration: BoxDecoration(
               gradient: AppGradients.analysisBanner,
               borderRadius: BorderRadius.circular(20),
@@ -29,61 +29,86 @@ class EssenceAnalysisBanner extends StatelessWidget {
                 ),
               ],
             ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Start Using Essense Analysis',
-                        style: AppTextStyles.bannerTitle.copyWith(fontSize: 18),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Tailored your personalized scent via skin bio-rhythms and real-time environment data.',
-                        style: AppTextStyles.bannerSub.copyWith(fontSize: 13),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const AddFragranceScreen(),
-                              ),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.accentCyan,
-                            side: const BorderSide(
-                              color: AppColors.accentCyan,
-                              width: 1.5,
+            child: Padding(
+              // Symmetric horizontal inset: typography stays centered in the card
+              // while clearing the decorative bottles on both sides.
+              padding: const EdgeInsets.fromLTRB(64, 16, 64, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.center,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: constraints.maxWidth,
                             ),
-                            minimumSize: const Size.fromHeight(44),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'Start It Now',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Start Using Essense Analysis',
+                                  style: AppTextStyles.bannerTitle.copyWith(
+                                    fontSize: 18,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Tailored your personalized scent via skin bio-rhythms and real-time environment data.',
+                                  style: AppTextStyles.bannerSub.copyWith(
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           ),
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const AddFragranceScreen(),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.accentCyan,
+                        side: const BorderSide(
+                          color: AppColors.accentCyan,
+                          width: 1.5,
+                        ),
+                        minimumSize: const Size.fromHeight(44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                    ],
+                      child: const Text(
+                        'Start It Now',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
           ),
         ),
@@ -93,13 +118,15 @@ class EssenceAnalysisBanner extends StatelessWidget {
           bottom: -10,
           width: 90,
           height: 110,
-          child: Opacity(
-            opacity: 0.9,
-            child: Transform.rotate(
-              angle: 0.15,
-              child: Image.asset(
-                'assets/images/ysl_perfume.png',
-                fit: BoxFit.cover,
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: 0.9,
+              child: Transform.rotate(
+                angle: 0.15,
+                child: Image.asset(
+                  'assets/images/ysl_perfume.png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
@@ -110,13 +137,15 @@ class EssenceAnalysisBanner extends StatelessWidget {
           top: -12,
           width: 88,
           height: 112,
-          child: Opacity(
-            opacity: 0.85,
-            child: Transform.rotate(
-              angle: -0.15,
-              child: Image.asset(
-                'assets/images/givenchy_perfume.png',
-                fit: BoxFit.cover,
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: 0.85,
+              child: Transform.rotate(
+                angle: -0.15,
+                child: Image.asset(
+                  'assets/images/givenchy_perfume.png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),

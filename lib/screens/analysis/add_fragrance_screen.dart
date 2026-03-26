@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/analysis/perfume_search_sheet.dart';
 import '../../widgets/analysis/primary_action_button.dart';
 import '../../widgets/analysis/secondary_action_button.dart';
+import 'scan_biometrics_screen.dart';
 import 'scan_product_screen.dart';
 
 class AddFragranceScreen extends StatelessWidget {
@@ -33,10 +35,11 @@ class AddFragranceScreen extends StatelessWidget {
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: Alignment.center,
                       child: Text(
                         "Let's start with your scent!",
                         style: AppTextStyles.h1,
+                        textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -77,9 +80,33 @@ class AddFragranceScreen extends StatelessWidget {
                       text: 'Add manually',
                       icon: Icons.grid_view_rounded,
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Manual entry will be added soon.'),
+                        showModalBottomSheet<void>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(24),
+                            ),
+                          ),
+                          builder: (_) => DraggableScrollableSheet(
+                            initialChildSize: 0.75,
+                            minChildSize: 0.5,
+                            maxChildSize: 0.93,
+                            expand: false,
+                            builder: (_, scrollController) =>
+                                PerfumeSearchSheet(
+                              scrollController: scrollController,
+                              onSelected: (perfume) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ScanBiometricsScreen(
+                                      selectedPerfume: perfume,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         );
                       },
