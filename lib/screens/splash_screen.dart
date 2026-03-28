@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-import 'main_shell.dart';
 import '../theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -34,44 +33,15 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Animated container with glowing effect
               FadeInUp(
                 duration: const Duration(milliseconds: 800),
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.accentPurple.withOpacity(0.3),
-                        AppColors.accentViolet.withOpacity(0.2),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: AppColors.accentPurple.withOpacity(0.5),
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.accentPurple.withOpacity(0.4),
-                        blurRadius: 30,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'E',
-                      style: TextStyle(
-                        fontSize: 60,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.accentPurple,
-                        letterSpacing: 2,
-                      ),
-                    ),
+                child: SizedBox(
+                  width: 140,
+                  height: 140,
+                  child: Image.asset(
+                    'assets/images/app_logo.png',
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
                   ),
                 ),
               ),
@@ -83,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Column(
                   children: [
                     const Text(
-                      'ESSENSE.',
+                      'ESSENSE',
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.w700,

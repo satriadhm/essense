@@ -51,7 +51,7 @@ class UserProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Monica',
+                  'Jasmine',
                   style: AppTextStyles.greeting.copyWith(fontSize: 28),
                 ),
                 const SizedBox(height: 4),

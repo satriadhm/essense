@@ -106,11 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(
-                        Icons.menu_rounded,
-                        size: 24,
-                        color: AppColors.textPrimary,
-                      ),
+                      const SizedBox(width: 24),
                       const Text(
                         'ESSENSE',
                         style: TextStyle(
@@ -266,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 240,
+                  height: 160,
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.screenHorizontal,
@@ -319,7 +315,7 @@ class _DailyUpdateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 16 / 9,
+      aspectRatio: 4 / 3,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.card),
         child: Stack(
