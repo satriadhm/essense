@@ -299,6 +299,18 @@ class _ARViewLayer extends StatelessWidget {
             ),
           ),
         ),
+        AnimatedBuilder(
+          animation: breathAnimation,
+          builder: (context, _) {
+            return CustomPaint(
+              painter: _AtmosphericGlowPainter(
+                breathProgress: breathAnimation.value,
+                baseColor: baseColor,
+                midColor: midColor,
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -614,7 +626,7 @@ class _BottomInfoCard extends StatelessWidget {
             ),
           ),
           child: Container(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 92),
+            padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 76),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.7),
               borderRadius: const BorderRadius.only(
@@ -826,9 +838,9 @@ class _MultiLayerSillagePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final topCount = 20 + (stressLevel * 0.15).round();
-    final midCount = 16 + (stressLevel * 0.10).round();
-    const baseBlobCount = 6;
+    final topCount = 28 + (stressLevel * 0.20).round();
+    final midCount = 22 + (stressLevel * 0.12).round();
+    const baseBlobCount = 10;
 
     final baseCx = size.width / 2;
     final baseCy = size.height * 0.65;
@@ -842,14 +854,14 @@ class _MultiLayerSillagePainter extends CustomPainter {
       final oy = math.sin(angle) * baseRy;
       final blobCenter = Offset(baseCx + ox, baseCy + oy);
       final r = 60 + (i % 3) * 12 + 6 * math.sin(seed * 3);
-      final op = 0.08 + (i % 4) * 0.015;
+      final op = 0.18 + (i % 4) * 0.04;
       _drawSoftBlob(canvas, blobCenter, r, baseColor, op);
     }
 
     final horizonPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 20
-      ..color = baseColor.withValues(alpha: 0.06);
+      ..color = baseColor.withValues(alpha: 0.14);
     canvas.drawCircle(
       Offset(baseCx, baseCy),
       55 + breathProgress * 40,
@@ -858,22 +870,26 @@ class _MultiLayerSillagePainter extends CustomPainter {
 
     final midCx = size.width / 2;
     final midCy = size.height * 0.50;
-    final midRx = driftRadius * 28;
-    final midRy = driftRadius * 16;
-    final ringAlpha = math.max(0.0, 0.3 - midProgress * 0.28);
-    final ringPaint = Paint()
+    final midRx = driftRadius * 42;
+    final midRy = driftRadius * 24;
+    final ringAlpha = 0.15 + math.sin(midProgress * math.pi * 2) * 0.10;
+    final outerRingPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
+      ..strokeWidth = 2.0
+      ..color = midColor.withValues(alpha: ringAlpha);
+    final innerRingPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
       ..color = midColor.withValues(alpha: ringAlpha);
     canvas.drawCircle(
       Offset(midCx, midCy),
       50 + midProgress * 90,
-      ringPaint,
+      outerRingPaint,
     );
     canvas.drawCircle(
       Offset(midCx, midCy),
       80 + midProgress * 60,
-      ringPaint..strokeWidth = 1,
+      innerRingPaint,
     );
 
     final midParticlePaint = Paint()..style = PaintingStyle.fill;
@@ -883,29 +899,31 @@ class _MultiLayerSillagePainter extends CustomPainter {
       final angle = midProgress * 2 * math.pi * 1.2 + t * 2 * math.pi;
       var x = midCx + math.cos(angle) * midRx;
       var y = midCy + math.sin(angle) * midRy * 0.72 + driftY;
-      final pr = 2.5 + (i % 5) * 0.5;
-      final pa = 0.2 + (i % 7) * 0.035;
-      midParticlePaint.color = midColor.withValues(alpha: pa.clamp(0.2, 0.45));
+      final pr = 2.8 + (i % 5) * 0.7;
+      final pa = 0.30 + (i % 7) * 0.05;
+      midParticlePaint.color = midColor.withValues(alpha: pa.clamp(0.30, 0.60));
       canvas.drawCircle(Offset(x, y), pr, midParticlePaint);
     }
 
     final topCx = size.width / 2;
     final topCy = size.height * 0.35;
-    final topRx = driftRadius * 14;
-    final topRy = driftRadius * 9;
+    final topRx = driftRadius * 28;
+    final topRy = driftRadius * 18;
     final topParticlePaint = Paint()..style = PaintingStyle.fill;
     final breathMod = 0.7 + breathProgress * 0.3;
+    final riseOffset = -(topProgress * 60) % size.height;
 
     for (var i = 0; i < topCount; i++) {
       final t = i / math.max(topCount, 1);
       final angle = topProgress * 2 * math.pi * 2.2 + t * 2 * math.pi;
       final x = topCx + math.cos(angle) * topRx;
-      final y = topCy + math.sin(angle) * topRy * 0.68;
-      var pr = 1.0 + (i % 4) * 0.4;
+      final y =
+          topCy + math.sin(angle) * topRy * 0.68 + riseOffset * 0.3;
+      var pr = 2.0 + (i % 4) * 0.8;
       if (i % 5 == 0) {
         pr *= 1 + math.sin(topProgress * math.pi * 3 + i) * 0.5;
       }
-      final baseOp = (0.15 + (i % 8) * 0.045).clamp(0.15, 0.55);
+      final baseOp = (0.25 + (i % 8) * 0.06).clamp(0.25, 0.70);
       topParticlePaint.color = topColor.withValues(
         alpha: (baseOp * breathMod).clamp(0.05, 1.0),
       );
@@ -917,10 +935,11 @@ class _MultiLayerSillagePainter extends CustomPainter {
     final auraPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          midColor.withValues(alpha: 0.06),
+          midColor.withValues(alpha: 0.18),
+          topColor.withValues(alpha: 0.06),
           midColor.withValues(alpha: 0.0),
         ],
-        stops: const [0.0, 1.0],
+        stops: const [0.0, 0.5, 1.0],
       ).createShader(Rect.fromCircle(center: auraCenter, radius: auraR));
     canvas.drawCircle(auraCenter, auraR, auraPaint);
   }
@@ -937,4 +956,36 @@ class _MultiLayerSillagePainter extends CustomPainter {
         oldDelegate.driftRadius != driftRadius ||
         oldDelegate.stressLevel != stressLevel;
   }
+}
+
+class _AtmosphericGlowPainter extends CustomPainter {
+  const _AtmosphericGlowPainter({
+    required this.breathProgress,
+    required this.baseColor,
+    required this.midColor,
+  });
+
+  final double breathProgress;
+  final Color baseColor;
+  final Color midColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height * 0.60);
+    final radius = size.width * 0.65 + breathProgress * 40;
+    final paint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          baseColor.withValues(alpha: 0.12 + breathProgress * 0.06),
+          midColor.withValues(alpha: 0.04),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.55, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    canvas.drawCircle(center, radius, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _AtmosphericGlowPainter old) =>
+      old.breathProgress != breathProgress;
 }
