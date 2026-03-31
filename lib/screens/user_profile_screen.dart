@@ -55,11 +55,22 @@ class UserProfileScreen extends StatelessWidget {
                   style: AppTextStyles.greeting.copyWith(fontSize: 28),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Paris, France',
-                  style: AppTextStyles.greetingSub.copyWith(
-                    fontStyle: FontStyle.normal,
-                    color: AppColors.textMuted,
+                RichText(
+                  text: TextSpan(
+                    style: AppTextStyles.greetingSub.copyWith(
+                      fontStyle: FontStyle.normal,
+                      color: AppColors.textMuted,
+                    ),
+                    children: [
+                      const TextSpan(text: 'Essense club points: '),
+                      TextSpan(
+                        text: 'xx',
+                        style: const TextStyle(
+                          color: AppColors.accentCyan,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

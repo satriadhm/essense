@@ -46,7 +46,7 @@ class QuickActionGrid extends StatelessWidget {
       onTap: onDiscoverTap,
     ),
     QuickActionItem(
-      label: 'Augmented\nReality',
+      label: 'AR Mode',
       imagePath: 'assets/images/ar.png',
       iconColor: AppColors.accentCyan,
       onTap: onARTap,
@@ -91,7 +91,7 @@ class _QuickActionButton extends StatelessWidget {
     const iconSize = 40.0;
     return SizedBox(
       width: 70,
-      height: 90,
+      height: 96,
       child: GestureDetector(
         onTap: item.onTap,
         child: Column(

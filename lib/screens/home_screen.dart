@@ -119,12 +119,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Row(
                         children: [
                           Icon(
-                            Icons.search_rounded,
-                            size: 24,
-                            color: AppColors.textPrimary,
-                          ),
-                          SizedBox(width: 12),
-                          Icon(
                             Icons.notifications_none_rounded,
                             size: 24,
                             color: AppColors.textPrimary,
@@ -262,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 160,
+                  height: 200,
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.screenHorizontal,

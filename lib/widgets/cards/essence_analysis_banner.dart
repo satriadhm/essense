@@ -51,21 +51,21 @@ class EssenceAnalysisBanner extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Start Using Essense Analysis',
+                                  'Start Using Essense',
                                   style: AppTextStyles.bannerTitle.copyWith(
                                     fontSize: 18,
                                   ),
-                                  maxLines: 2,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Tailored your personalized scent via skin bio-rhythms and real-time environment data.',
+                                  'Personalize your scent to your skin and surroundings',
                                   style: AppTextStyles.bannerSub.copyWith(
                                     fontSize: 13,
                                   ),
-                                  maxLines: 2,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
                                 ),
