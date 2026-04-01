@@ -60,12 +60,26 @@ class EssenceAnalysisBanner extends StatelessWidget {
                                   textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  'Personalize your scent to your skin and surroundings',
-                                  style: AppTextStyles.bannerSub.copyWith(
-                                    fontSize: 13,
+                                Text.rich(
+                                  TextSpan(
+                                    style: AppTextStyles.bannerSub.copyWith(
+                                      fontSize: 13,
+                                    ),
+                                    children: [
+                                      const TextSpan(
+                                        text: 'Personalize your scent\n',
+                                      ),
+                                      TextSpan(
+                                        text: 'to your skin and surroundings',
+                                        style: AppTextStyles.bannerSub.copyWith(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  maxLines: 1,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
                                 ),
