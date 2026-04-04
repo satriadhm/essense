@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/results_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav/custom_bottom_nav.dart';
-import 'analysis/scan_product_screen.dart';
 import 'ar_visualization_screen.dart';
 import 'chat_mia_screen.dart';
 import 'community_screen.dart';
@@ -11,6 +10,7 @@ import 'discover_screen.dart';
 import 'home_screen.dart';
 import 'journal_screen.dart';
 import 'my_closet_screen.dart';
+import 'scent_match_screen.dart';
 import 'user_profile_screen.dart';
 
 /// Main shell that hosts the bottom nav and switches between screens.
@@ -30,7 +30,7 @@ class _MainShellState extends State<MainShell> {
       showBottomNav: false,
       onAnalyzeTap: () => Navigator.of(
         context,
-      ).push(MaterialPageRoute(builder: (_) => const ScanProductScreen())),
+      ).push(MaterialPageRoute(builder: (_) => const ScentMatchScreen())),
       onChatMiaTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => const ChatMiaScreen(showBottomNav: false),
