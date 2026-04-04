@@ -36,8 +36,8 @@ const _kPerfumeDatabase = [
     baseNote: 'Ambroxan',
   ),
   PerfumeOption(
-    brand: 'Chanel',
-    name: 'Bleu de Chanel',
+    brand: 'Givenchy',
+    name: 'Gentleman Eau de Parfum',
     topNote: 'Citrus',
     middleNote: 'Ginger',
     baseNote: 'Sandalwood',

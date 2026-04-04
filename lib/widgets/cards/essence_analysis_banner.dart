@@ -74,7 +74,6 @@ class EssenceAnalysisBanner extends StatelessWidget {
                                         style: AppTextStyles.bannerSub.copyWith(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
-                                          color: AppColors.textPrimary,
                                         ),
                                       ),
                                     ],
