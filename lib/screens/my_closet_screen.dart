@@ -108,14 +108,30 @@ class _MyClosetScreenState extends State<MyClosetScreen> {
     }
   }
 
-  void _toggleFavorite(int index) {
-    setState(() {
-      if (_favoriteIds.contains(index)) {
-        _favoriteIds = {..._favoriteIds}..remove(index);
-      } else {
-        _favoriteIds = {..._favoriteIds, index};
-      }
-    });
+  int _matchPercentForItem(_ClosetItem item) {
+    const fallback = 80;
+    const scores = <String, int>{
+      'Libre': 97,
+      'Mon Paris': 91,
+      'Sauvage': 88,
+      'Oud Wood': 85,
+      'Black Orchid': 82,
+      'Y EDP': 94,
+    };
+    return scores[item.name] ?? fallback;
+  }
+
+  void _showClosetItemDetail(BuildContext context, _ClosetItem item) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      builder: (_) => _ClosetItemDetailSheet(
+        item: item,
+        matchPercent: _matchPercentForItem(item),
+      ),
+    );
   }
 
   @override
@@ -271,20 +287,46 @@ class _MyClosetScreenState extends State<MyClosetScreen> {
                       ),
                     )
                   else
-                    ListView.builder(
-                      itemCount: filteredItems.length,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index) {
-                        final entry = filteredItems[index];
-                        final itemIndex = entry.key;
-                        final item = entry.value;
-                        return _ClosetCard(
-                          item: item,
-                          isFavorite: _favoriteIds.contains(itemIndex),
-                          onFavoriteTap: () => _toggleFavorite(itemIndex),
-                        );
-                      },
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.screenHorizontal,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFF1C1828), Color(0xFF0D0B14)],
+                          ),
+                          color: const Color(0xFF12101A),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xFF3D2F5C),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: GridView.builder(
+                          itemCount: filteredItems.length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 12,
+                                childAspectRatio: 0.72,
+                              ),
+                          itemBuilder: (context, index) {
+                            final item = filteredItems[index].value;
+                            return _ClosetGridCell(
+                              item: item,
+                              matchPercent: _matchPercentForItem(item),
+                              onTap: () => _showClosetItemDetail(context, item),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   const SizedBox(height: AppSpacing.navBarHeight + 24),
                 ],
@@ -421,169 +463,436 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-class _ClosetCard extends StatelessWidget {
-  const _ClosetCard({
+class _ClosetGridCell extends StatelessWidget {
+  const _ClosetGridCell({
     required this.item,
-    required this.isFavorite,
-    required this.onFavoriteTap,
+    required this.matchPercent,
+    required this.onTap,
   });
 
   final _ClosetItem item;
-  final bool isFavorite;
-  final VoidCallback onFavoriteTap;
+  final int matchPercent;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.screenHorizontal,
-      ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          gradient: AppGradients.cardShimmer,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(
-            color: item.accentColor.withValues(alpha: 0.3),
-            width: 1,
+    final levelColor = item.volumePercent > 50
+        ? item.accentColor
+        : item.volumePercent > 20
+        ? AppColors.accentGold
+        : AppColors.warningRed;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            gradient: AppGradients.cardShimmer,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: item.accentColor.withValues(alpha: 0.25),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: item.accentColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: item.accentColor.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: Text(
+                    '$matchPercent%',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: item.accentColor,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Expanded(
+                flex: 6,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        item.accentColor.withValues(alpha: 0.08),
+                        Colors.transparent,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: item.accentColor.withValues(alpha: 0.25),
+                        blurRadius: 16,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.water_drop_rounded,
+                      size: 36,
+                      color: item.accentColor.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                item.brand,
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w500,
+                  color: item.accentColor,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                item.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.montserrat(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: item.volumePercent / 100,
+                  minHeight: 3,
+                  backgroundColor: AppColors.cardBgLight,
+                  valueColor: AlwaysStoppedAnimation<Color>(levelColor),
+                ),
+              ),
+            ],
           ),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.small),
-              child: Container(
-                width: 60,
-                height: 80,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      item.accentColor.withValues(alpha: 0.2),
-                      AppColors.cardBg,
-                    ],
-                  ),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.water_drop_rounded,
-                    size: 32,
-                    color: item.accentColor.withValues(alpha: 0.8),
-                  ),
-                ),
+      ),
+    );
+  }
+}
+
+class _ClosetItemDetailSheet extends StatefulWidget {
+  const _ClosetItemDetailSheet({required this.item, required this.matchPercent});
+
+  final _ClosetItem item;
+  final int matchPercent;
+
+  @override
+  State<_ClosetItemDetailSheet> createState() => _ClosetItemDetailSheetState();
+}
+
+class _ClosetItemDetailSheetState extends State<_ClosetItemDetailSheet>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _scale = Tween<double>(begin: 0.7, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _fade = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final volumeColor = item.volumePercent > 50
+        ? item.accentColor
+        : item.volumePercent > 20
+        ? AppColors.accentGold
+        : AppColors.warningRed;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: FadeTransition(
+        opacity: _fade,
+        child: ScaleTransition(
+          scale: _scale,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.cardBg,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: item.accentColor.withValues(alpha: 0.5),
+                width: 1.5,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 40,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.brand,
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: item.accentColor,
-                                letterSpacing: 0.5,
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.brand,
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                  color: item.accentColor,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              item.name,
-                              style: GoogleFonts.montserrat(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
+                              const SizedBox(height: 4),
+                              Text(
+                                item.name,
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: item.accentColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: item.accentColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Text(
+                          '${widget.matchPercent}% Match',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: item.accentColor,
+                          ),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: onFavoriteTap,
-                        child: Icon(
-                          isFavorite
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
-                          color: isFavorite
-                              ? AppColors.warningRed
-                              : AppColors.textMuted,
-                          size: 20,
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        'Highly Compatible · ${item.family}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${item.family}  ·  ${item.lastWorn}  ·  ${item.volumePercent}% full',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textSecondary,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: item.volumePercent / 100,
-                      backgroundColor: AppColors.cardBgLight,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        item.volumePercent > 50
-                            ? item.accentColor
-                            : item.volumePercent > 20
-                            ? AppColors.accentGold
-                            : AppColors.warningRed,
-                      ),
-                      minHeight: 4,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: item.notes
-                        .map(
-                          (note) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.pillBg,
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.pill,
-                              ),
-                              border: Border.all(
-                                color: item.accentColor.withValues(alpha: 0.25),
-                              ),
-                            ),
-                            child: Text(
-                              note,
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: item.accentColor,
-                              ),
+                    const SizedBox(height: 16),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: item.accentColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: item.accentColor.withValues(alpha: 0.35),
                             ),
                           ),
-                        )
-                        .toList(),
-                  ),
-                ],
+                          child: Icon(
+                            Icons.water_drop_rounded,
+                            size: 48,
+                            color: item.accentColor.withValues(alpha: 0.9),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.pillBg,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.pill,
+                                  ),
+                                  border: Border.all(
+                                    color: item.accentColor.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  item.family,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: item.accentColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Last worn: ${item.lastWorn}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppColors.textLight,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: item.volumePercent / 100,
+                                  minHeight: 4,
+                                  backgroundColor: AppColors.cardBgLight,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    volumeColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${item.volumePercent}% remaining',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: item.notes
+                          .map(
+                            (note) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.pillBg,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.pill,
+                                ),
+                                border: Border.all(
+                                  color: item.accentColor.withValues(
+                                    alpha: 0.25,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                note,
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  color: item.accentColor,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgDeep.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border(
+                          left: BorderSide(color: item.accentColor, width: 4),
+                        ),
+                      ),
+                      child: Text(
+                        'A signature scent that complements your biometric profile. '
+                        'Your skin chemistry amplifies the ${item.notes.first} accord, '
+                        'making it last longer on you.',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textLight,
+                          height: 1.6,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

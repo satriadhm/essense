@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav/custom_bottom_nav.dart';
@@ -111,6 +112,51 @@ const _kFragrances = [
 
 const _kCategories = ['All', 'Floral', 'Woody', 'Citrus', 'Oriental', 'Fresh'];
 
+class _PromoBanner {
+  final String title;
+  final String subtitle;
+  final String ctaLabel;
+  final List<Color> gradientColors;
+  final IconData icon;
+  final Color accentColor;
+
+  const _PromoBanner({
+    required this.title,
+    required this.subtitle,
+    required this.ctaLabel,
+    required this.gradientColors,
+    required this.icon,
+    required this.accentColor,
+  });
+}
+
+const _kPromoBanners = [
+  _PromoBanner(
+    title: 'New Arrivals',
+    subtitle: 'Discover the latest from L\'Oréal Luxe',
+    ctaLabel: 'Explore',
+    gradientColors: [Color(0xFF1A0A2E), Color(0xFF3D1A6E)],
+    icon: Icons.auto_awesome_rounded,
+    accentColor: Color(0xFF8B3AED),
+  ),
+  _PromoBanner(
+    title: 'Exclusive Offer',
+    subtitle: '20% off your next Essense-matched fragrance',
+    ctaLabel: 'Claim Now',
+    gradientColors: [Color(0xFF0A1F2E), Color(0xFF0A3D4D)],
+    icon: Icons.local_offer_rounded,
+    accentColor: Color(0xFF4DD9FF),
+  ),
+  _PromoBanner(
+    title: 'Activation Event',
+    subtitle: 'Visit a L\'Oréal counter for a live biometric scan',
+    ctaLabel: 'Find a Counter',
+    gradientColors: [Color(0xFF1F1200), Color(0xFF3D2800)],
+    icon: Icons.location_on_rounded,
+    accentColor: Color(0xFFFFB700),
+  ),
+];
+
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key, this.showBottomNav = false});
 
@@ -124,7 +170,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   int _selectedCategoryIndex = 0;
   String _searchQuery = '';
   int _currentNavIndex = 0;
+  int _promoPageIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  late final PageController _promoPageController;
+  Timer? _promoTimer;
 
   List<_FragranceItem> get _filteredFragrances {
     return _kFragrances.where((f) {
@@ -141,7 +190,24 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _promoPageController = PageController(viewportFraction: 0.88);
+    _promoTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_promoPageController.hasClients) return;
+      final next = (_promoPageIndex + 1) % _kPromoBanners.length;
+      _promoPageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
   void dispose() {
+    _promoTimer?.cancel();
+    _promoPageController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -253,6 +319,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                 ),
                 SliverToBoxAdapter(
+                  child: _PromoBannerSection(
+                    pageController: _promoPageController,
+                    currentIndex: _promoPageIndex,
+                    onPageChanged: (index) =>
+                        setState(() => _promoPageIndex = index),
+                  ),
+                ),
+                SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.screenHorizontal,
@@ -260,34 +334,55 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       AppSpacing.screenHorizontal,
                       12,
                     ),
-                    child: Text(
-                      'FRAGRANCES FOR YOU',
-                      style: AppTextStyles.sectionTitle.copyWith(
-                        letterSpacing: 0.8,
-                      ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'ALL FRAGRANCES',
+                          style: AppTextStyles.sectionTitle.copyWith(
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBg,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(
+                              color: AppColors.accentCyan.withValues(alpha: 0.45),
+                            ),
+                          ),
+                          child: Text(
+                            '${fragrances.length} results',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.accentCyan,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                SliverToBoxAdapter(
-                  child: fragrances.isEmpty
-                      ? const _DiscoverEmptyState()
-                      : GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: AppSpacing.gridGap,
-                                crossAxisSpacing: AppSpacing.gridGap,
-                                childAspectRatio: 0.72,
-                              ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.screenHorizontal,
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenHorizontal,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: fragrances.isEmpty
+                        ? const _DiscoverEmptyState()
+                        : Column(
+                            children: List.generate(
+                              fragrances.length,
+                              (index) =>
+                                  _DiscoverCard(item: fragrances[index]),
+                            ),
                           ),
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: fragrances.length,
-                          itemBuilder: (context, index) =>
-                              _DiscoverCard(item: fragrances[index]),
-                        ),
+                  ),
                 ),
                 SliverToBoxAdapter(
                   child: SizedBox(height: AppSpacing.navBarHeight + 16),
@@ -306,6 +401,138 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _PromoBannerSection extends StatelessWidget {
+  const _PromoBannerSection({
+    required this.pageController,
+    required this.currentIndex,
+    required this.onPageChanged,
+  });
+
+  final PageController pageController;
+  final int currentIndex;
+  final ValueChanged<int> onPageChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: SizedBox(
+        height: 160,
+        child: Stack(
+          children: [
+            SizedBox(
+              height: 140,
+              child: PageView.builder(
+                controller: pageController,
+                itemCount: _kPromoBanners.length,
+                onPageChanged: onPageChanged,
+                itemBuilder: (context, index) {
+                  final banner = _kPromoBanners[index];
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: banner.gradientColors,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: banner.accentColor.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                banner.icon,
+                                size: 36,
+                                color: banner.accentColor,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                banner.title,
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                banner.subtitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          height: 32,
+                          child: OutlinedButton(
+                            onPressed: () {},
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: banner.accentColor),
+                              foregroundColor: banner.accentColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                            ),
+                            child: Text(
+                              banner.ctaLabel,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: banner.accentColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              right: AppSpacing.screenHorizontal,
+              bottom: 4,
+              child: Row(
+                children: List.generate(
+                  _kPromoBanners.length,
+                  (index) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    margin: const EdgeInsets.only(left: 5),
+                    width: currentIndex == index ? 16 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: currentIndex == index
+                          ? AppColors.accentCyan
+                          : AppColors.textMuted.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -448,136 +675,114 @@ class _DiscoverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: AppGradients.cardShimmer,
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: item.accentColor.withValues(alpha: 0.35),
+          color: item.accentColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Expanded(
-            flex: 9,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppRadius.card),
-              ),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          item.accentColor.withValues(alpha: 0.18),
-                          AppColors.cardBg,
-                        ],
-                      ),
-                    ),
-                  ),
-                  Center(
-                    child: Icon(
-                      Icons.water_drop_rounded,
-                      size: 48,
-                      color: item.accentColor.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.bgDeep.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(
-                          color: AppColors.accentGold.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.auto_awesome_rounded,
-                            size: 10,
-                            color: AppColors.accentGold,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${item.matchScore}%',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.accentGold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          Container(
+            width: 52,
+            height: 68,
+            decoration: BoxDecoration(
+              color: item.accentColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: item.accentColor.withValues(alpha: 0.35)),
+            ),
+            child: Icon(
+              Icons.water_drop_rounded,
+              size: 28,
+              color: item.accentColor,
             ),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            flex: 8,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.brand,
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: item.accentColor,
-                      letterSpacing: 0.5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.brand,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: item.accentColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  item.name,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${item.topNote} · ${item.middleNote} · ${item.baseNote}',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(
+                      color: item.accentColor.withValues(alpha: 0.3),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.name,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
+                  child: Text(
                     item.family,
                     style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${item.topNote} · ${item.middleNote} · ${item.baseNote}',
-                    style: GoogleFonts.inter(
                       fontSize: 10,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textMuted,
-                      height: 1.3,
+                      fontWeight: FontWeight.w600,
+                      color: item.accentColor,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${item.matchScore}%',
+                style: GoogleFonts.montserrat(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: item.accentColor,
+                ),
+              ),
+              Text(
+                'match',
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Icon(
+                Icons.add_circle_outline_rounded,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
+            ],
           ),
         ],
       ),
@@ -591,24 +796,29 @@ class _DiscoverEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.screenHorizontal,
-        vertical: 32,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 36),
       child: Center(
         child: Column(
           children: [
             const Icon(
               Icons.search_off_rounded,
-              size: 36,
+              size: 48,
               color: AppColors.textMuted,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               'No fragrances found',
               style: GoogleFonts.montserrat(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Try adjusting your search or filter',
+              style: GoogleFonts.inter(
+                fontSize: 13,
                 color: AppColors.textSecondary,
               ),
             ),

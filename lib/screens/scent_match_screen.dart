@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
+import 'my_closet_screen.dart';
 
 class _ScentOption {
   final String brand;
@@ -171,6 +172,16 @@ class _ScentMatchScreenState extends State<ScentMatchScreen>
         _step = 2;
       });
     });
+  }
+
+  Future<void> _handleAddToCloset() async {
+    if (_addedToCloset) return;
+    setState(() => _addedToCloset = true);
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MyClosetScreen()),
+    );
   }
 
   Widget _buildHeader(String title) {
@@ -761,9 +772,7 @@ class _ScentMatchScreenState extends State<ScentMatchScreen>
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton.icon(
-                    onPressed: _addedToCloset
-                        ? null
-                        : () => setState(() => _addedToCloset = true),
+                    onPressed: _addedToCloset ? null : _handleAddToCloset,
                     icon: Icon(
                       _addedToCloset
                           ? Icons.check_circle_rounded
@@ -772,13 +781,13 @@ class _ScentMatchScreenState extends State<ScentMatchScreen>
                     ),
                     label: Text(
                       _addedToCloset
-                          ? 'Added to My Closet!'
+                          ? 'Saved to My Closet ✓'
                           : 'Add to My Closet',
                       style: AppTextStyles.buttonLarge,
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _addedToCloset
-                          ? AppColors.accentCyan.withValues(alpha: 0.3)
+                          ? AppColors.accentCyan.withValues(alpha: 0.25)
                           : AppColors.analysisDarkBlue,
                       foregroundColor: _addedToCloset
                           ? AppColors.accentCyan
@@ -799,11 +808,30 @@ class _ScentMatchScreenState extends State<ScentMatchScreen>
                     ),
                   ),
                 ),
+                if (_addedToCloset) ...[
+                  const SizedBox(height: 8),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 800),
+                    builder: (context, value, child) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        child: LinearProgressIndicator(
+                          value: value,
+                          minHeight: 2.5,
+                          backgroundColor: AppColors.cardBgLight,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.accentCyan,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
-                  child: OutlinedButton(
+                  child: TextButton(
                     onPressed: () => setState(() {
                       _step = 0;
                       _selectedFragrance = null;
@@ -811,18 +839,12 @@ class _ScentMatchScreenState extends State<ScentMatchScreen>
                       _searchController.clear();
                       _searchQuery = '';
                     }),
-                    style: OutlinedButton.styleFrom(
+                    style: TextButton.styleFrom(
                       foregroundColor: AppColors.accentCyan,
-                      side: const BorderSide(
-                        color: AppColors.accentCyan,
-                        width: 1.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.button),
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      'Try Another Fragrance',
+                      'Try Another',
                       style: AppTextStyles.buttonLarge.copyWith(
                         color: AppColors.accentCyan,
                       ),
